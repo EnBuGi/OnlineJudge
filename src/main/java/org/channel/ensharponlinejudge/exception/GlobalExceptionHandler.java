@@ -14,36 +14,29 @@ public class GlobalExceptionHandler {
   protected ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
       MethodArgumentNotValidException e) {
     ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
-    ErrorResponse response =
-        new ErrorResponse(
-            errorCode.getStatus().value(),
-            errorCode.name(),
-            errorCode.getCode(),
-            errorCode.getMessage());
-    return new ResponseEntity<>(response, HttpStatus.valueOf(errorCode.getStatus().value()));
+    ErrorResponse response = createErrorResponse(errorCode);
+    return new ResponseEntity<>(response, errorCode.getStatus());
   }
 
   @ExceptionHandler(BusinessException.class)
   protected ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
     ErrorCode errorCode = e.getErrorCode();
-    ErrorResponse response =
-        new ErrorResponse(
-            errorCode.getStatus().value(),
-            errorCode.name(),
-            errorCode.getCode(),
-            errorCode.getMessage());
-    return new ResponseEntity<>(response, HttpStatus.valueOf(errorCode.getStatus().value()));
+    ErrorResponse response = createErrorResponse(errorCode);
+    return new ResponseEntity<>(response, errorCode.getStatus());
   }
 
   @ExceptionHandler(Exception.class)
   protected ResponseEntity<ErrorResponse> handleException(Exception e) {
     ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
-    ErrorResponse response =
-        new ErrorResponse(
-            errorCode.getStatus().value(),
-            errorCode.name(),
-            errorCode.getCode(),
-            errorCode.getMessage());
-    return new ResponseEntity<>(response, HttpStatus.valueOf(errorCode.getStatus().value()));
+    ErrorResponse response = createErrorResponse(errorCode);
+    return new ResponseEntity<>(response, errorCode.getStatus());
+  }
+
+  private ErrorResponse createErrorResponse(ErrorCode errorCode) {
+    return new ErrorResponse(
+        errorCode.getStatus().value(),
+        errorCode.name(),
+        errorCode.getCode(),
+        errorCode.getMessage());
   }
 }

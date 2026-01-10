@@ -10,7 +10,7 @@ import org.channel.ensharponlinejudge.auth.service.dtos.TokenDto;
 import org.channel.ensharponlinejudge.domain.member.entity.Member;
 import org.channel.ensharponlinejudge.domain.member.repository.MemberRepository;
 import org.channel.ensharponlinejudge.exception.BusinessException;
-import org.channel.ensharponlinejudge.exception.enums.ErrorCode;
+import org.channel.ensharponlinejudge.exception.enums.AuthErrorCode;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -33,7 +33,7 @@ public class AuthService {
   @Transactional
   public void signup(SignupRequest request) {
     if (memberRepository.existsByEmail(request.email())) {
-      throw new BusinessException(ErrorCode.USER_ALREADY_EXISTS);
+      throw new BusinessException(AuthErrorCode.USER_ALREADY_EXISTS);
     }
     Member member = Member.initialize(request.email(), passwordEncoder.encode(request.password()));
     memberRepository.save(member);
@@ -69,7 +69,7 @@ public class AuthService {
   public void logout(String accessToken) {
     // 1. Access Token 검증
     if (!jwtTokenProvider.validateToken(accessToken)) {
-      throw new BusinessException(ErrorCode.INVALID_TOKEN);
+      throw new BusinessException(AuthErrorCode.INVALID_TOKEN);
     }
 
     Authentication authentication = jwtTokenProvider.getAuthentication(accessToken);
@@ -88,7 +88,7 @@ public class AuthService {
   public TokenDto reissue(String refreshToken) {
     // 1. Refresh Token 검증
     if (!jwtTokenProvider.validateToken(refreshToken)) {
-      throw new BusinessException(ErrorCode.INVALID_TOKEN);
+      throw new BusinessException(AuthErrorCode.INVALID_TOKEN);
     }
 
     // 2. 토큰에서 유저 ID(Email) 추출 -> Redis에 저장된 RT와 일치하는지 확인
@@ -96,7 +96,7 @@ public class AuthService {
     String redisRefreshToken = redisTemplate.opsForValue().get("RT:" + authentication.getName());
 
     if (!refreshToken.equals(redisRefreshToken)) {
-      throw new BusinessException(ErrorCode.TOKEN_USER_MISMATCH);
+      throw new BusinessException(AuthErrorCode.TOKEN_USER_MISMATCH);
     }
 
     // 3. 새로운 토큰 생성 및 Redis 업데이트 (RT Rotation)

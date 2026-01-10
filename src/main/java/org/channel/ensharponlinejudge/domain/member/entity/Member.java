@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 import jakarta.persistence.*;
 
 import org.channel.ensharponlinejudge.exception.BusinessException;
-import org.channel.ensharponlinejudge.exception.enums.ErrorCode;
+import org.channel.ensharponlinejudge.exception.enums.AuthErrorCode;
 
 import lombok.*;
 
@@ -50,7 +50,7 @@ public class Member {
 
   private void validatePassword(String password) {
     if (password == null || !BCRYPT_PATTERN.matcher(password).matches()) {
-      throw new BusinessException(ErrorCode.INVALID_PASSWORD_FORMAT);
+      throw new BusinessException(AuthErrorCode.INVALID_PASSWORD_FORMAT);
     }
   }
 }

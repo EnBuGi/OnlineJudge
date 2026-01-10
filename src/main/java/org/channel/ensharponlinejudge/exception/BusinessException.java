@@ -1,7 +1,8 @@
 package org.channel.ensharponlinejudge.exception;
 
-import lombok.Getter;
 import org.channel.ensharponlinejudge.exception.enums.ErrorCode;
+
+import lombok.Getter;
 
 @Getter
 public class BusinessException extends RuntimeException {

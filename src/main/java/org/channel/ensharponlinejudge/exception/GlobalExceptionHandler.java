@@ -1,7 +1,9 @@
 package org.channel.ensharponlinejudge.exception;
 
-import org.channel.ensharponlinejudge.exception.response.ErrorResponse;
+import org.channel.ensharponlinejudge.exception.enums.AuthErrorCode;
+import org.channel.ensharponlinejudge.exception.enums.CommonErrorCode;
 import org.channel.ensharponlinejudge.exception.enums.ErrorCode;
+import org.channel.ensharponlinejudge.exception.response.ErrorResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -14,7 +16,7 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(MethodArgumentNotValidException.class)
   protected ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
       MethodArgumentNotValidException e) {
-    ErrorCode errorCode = ErrorCode.INVALID_INPUT_VALUE;
+    ErrorCode errorCode = CommonErrorCode.INVALID_INPUT_VALUE;
     ErrorResponse response = createErrorResponse(errorCode);
     return new ResponseEntity<>(response, errorCode.getStatus());
   }
@@ -28,23 +30,20 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(AuthenticationException.class)
   protected ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException e) {
-    ErrorCode errorCode = ErrorCode.LOGIN_FAILED;
+    ErrorCode errorCode = AuthErrorCode.LOGIN_FAILED;
     ErrorResponse response = createErrorResponse(errorCode);
     return new ResponseEntity<>(response, errorCode.getStatus());
   }
 
   @ExceptionHandler(Exception.class)
   protected ResponseEntity<ErrorResponse> handleException(Exception e) {
-    ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+    ErrorCode errorCode = CommonErrorCode.INTERNAL_SERVER_ERROR;
     ErrorResponse response = createErrorResponse(errorCode);
     return new ResponseEntity<>(response, errorCode.getStatus());
   }
 
   private ErrorResponse createErrorResponse(ErrorCode errorCode) {
     return new ErrorResponse(
-        errorCode.getStatus().value(),
-        errorCode.name(),
-        errorCode.getCode(),
-        errorCode.getMessage());
+        errorCode.getStatus().value(), errorCode.name(), errorCode.getMessage());
   }
 }

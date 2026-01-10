@@ -5,8 +5,8 @@ import jakarta.validation.Valid;
 
 import org.channel.ensharponlinejudge.auth.controller.requests.LoginRequest;
 import org.channel.ensharponlinejudge.auth.controller.requests.SignupRequest;
-import org.channel.ensharponlinejudge.auth.service.dtos.AccessTokenResponse;
 import org.channel.ensharponlinejudge.auth.service.AuthService;
+import org.channel.ensharponlinejudge.auth.service.dtos.AccessTokenResponse;
 import org.channel.ensharponlinejudge.auth.service.dtos.TokenDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;

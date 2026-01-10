@@ -1,11 +1,12 @@
 package org.channel.ensharponlinejudge.auth.service;
 
-import module java.base;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.stream.Collectors;
 
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
-import lombok.extern.slf4j.Slf4j;
+import javax.crypto.SecretKey;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -15,8 +16,11 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
-import java.util.stream.Collectors;
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SecurityException;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
@@ -26,9 +30,10 @@ public class JwtTokenProvider {
   private final long accessTokenValidity;
   private final long refreshTokenValidity;
 
-  public JwtTokenProvider(@Value("${jwt.secret}") String secret,
-                          @Value("${jwt.access-expiration}") long accessTokenValidity,
-                          @Value("${jwt.refresh-expiration}") long refreshTokenValidity) {
+  public JwtTokenProvider(
+      @Value("${jwt.secret}") String secret,
+      @Value("${jwt.access-expiration}") long accessTokenValidity,
+      @Value("${jwt.refresh-expiration}") long refreshTokenValidity) {
     if (secret == null || secret.isBlank()) {
       throw new IllegalArgumentException("JWT 비밀 키가 설정되지 않았습니다.");
     }
@@ -50,9 +55,10 @@ public class JwtTokenProvider {
   }
 
   private String createToken(Authentication authentication, long validity) {
-    String authorities = authentication.getAuthorities().stream()
-        .map(GrantedAuthority::getAuthority)
-        .collect(Collectors.joining(","));
+    String authorities =
+        authentication.getAuthorities().stream()
+            .map(GrantedAuthority::getAuthority)
+            .collect(Collectors.joining(","));
 
     long now = (new Date()).getTime();
     Date validityDate = new Date(now + validity);
@@ -70,7 +76,7 @@ public class JwtTokenProvider {
     Claims claims = parseClaims(token);
 
     if (claims.get("auth") == null) {
-      throw new RuntimeException("권한 정보가 없는 토큰입니다.");
+      throw new IllegalArgumentException("권한 정보가 없는 토큰입니다.");
     }
 
     Collection<? extends GrantedAuthority> authorities =
@@ -87,14 +93,14 @@ public class JwtTokenProvider {
     try {
       Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
       return true;
-    } catch (JwtException | IllegalArgumentException e) {
-      switch (e) {
-        case io.jsonwebtoken.security.SecurityException _, MalformedJwtException _ -> log.info("잘못된 JWT 서명입니다.");
-        case ExpiredJwtException _ -> log.info("만료된 JWT 토큰입니다.");
-        case UnsupportedJwtException _ -> log.info("지원되지 않는 JWT 토큰입니다.");
-        case IllegalArgumentException _ -> log.info("JWT 토큰이 잘못되었습니다.");
-        default -> log.info("알 수 없는 JWT 오류입니다.");
-      }
+    } catch (SecurityException | MalformedJwtException e) {
+      log.info("잘못된 JWT 서명입니다.");
+    } catch (ExpiredJwtException e) {
+      log.info("만료된 JWT 토큰입니다.");
+    } catch (UnsupportedJwtException e) {
+      log.info("지원되지 않는 JWT 토큰입니다.");
+    } catch (IllegalArgumentException e) {
+      log.info("JWT 토큰이 잘못되었습니다.");
     }
     return false;
   }

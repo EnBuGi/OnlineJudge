@@ -1,8 +1,9 @@
 package org.channel.ensharponlinejudge.exception;
 
-import org.channel.ensharponlinejudge.exception.dto.ErrorResponse;
-import org.springframework.http.HttpStatus;
+import org.channel.ensharponlinejudge.exception.response.ErrorResponse;
+import org.channel.ensharponlinejudge.exception.enums.ErrorCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -21,6 +22,13 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(BusinessException.class)
   protected ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
     ErrorCode errorCode = e.getErrorCode();
+    ErrorResponse response = createErrorResponse(errorCode);
+    return new ResponseEntity<>(response, errorCode.getStatus());
+  }
+
+  @ExceptionHandler(AuthenticationException.class)
+  protected ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException e) {
+    ErrorCode errorCode = ErrorCode.LOGIN_FAILED;
     ErrorResponse response = createErrorResponse(errorCode);
     return new ResponseEntity<>(response, errorCode.getStatus());
   }

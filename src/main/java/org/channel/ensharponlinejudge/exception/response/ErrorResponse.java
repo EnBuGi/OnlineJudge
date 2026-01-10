@@ -1,4 +1,4 @@
-package org.channel.ensharponlinejudge.exception.dto;
+package org.channel.ensharponlinejudge.exception.response;
 
 import java.time.LocalDateTime;
 

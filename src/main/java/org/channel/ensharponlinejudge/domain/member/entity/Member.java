@@ -1,15 +1,22 @@
 package org.channel.ensharponlinejudge.domain.member.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
-
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
+
+import jakarta.persistence.*;
+
+import org.channel.ensharponlinejudge.exception.BusinessException;
+import org.channel.ensharponlinejudge.exception.enums.ErrorCode;
+
+import lombok.*;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member {
+
+  private static final Pattern BCRYPT_PATTERN = Pattern.compile("^\\$2[aby]\\$.{56}$");
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,6 +33,7 @@ public class Member {
 
   @Builder
   private Member(Long id, String email, String password, List<String> roles) {
+    validatePassword(password);
     this.id = id;
     this.email = email;
     this.password = password;
@@ -38,5 +46,11 @@ public class Member {
         .password(password)
         .roles(Collections.singletonList("ROLE_USER"))
         .build();
+  }
+
+  private void validatePassword(String password) {
+    if (password == null || !BCRYPT_PATTERN.matcher(password).matches()) {
+      throw new BusinessException(ErrorCode.INVALID_PASSWORD_FORMAT);
+    }
   }
 }

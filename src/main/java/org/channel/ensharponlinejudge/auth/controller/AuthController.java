@@ -43,12 +43,12 @@ public class AuthController {
   @PostMapping("/auth/token")
   public ResponseEntity<AccessTokenResponse> login(
       @Valid @RequestBody LoginRequest request, HttpServletResponse response) {
-    TokenDto tokenResponse = authService.login(request);
+    TokenDto tokenDto = authService.login(request);
 
-    ResponseCookie cookie = createRefreshTokenCookie(tokenResponse.refreshToken());
+    ResponseCookie cookie = createRefreshTokenCookie(tokenDto.refreshToken());
     response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-    return ResponseEntity.ok(AccessTokenResponse.from(tokenResponse.accessToken()));
+    return ResponseEntity.ok(AccessTokenResponse.from(tokenDto.accessToken()));
   }
 
   @Operation(
@@ -68,12 +68,12 @@ public class AuthController {
   @PostMapping("/auth/token/reissue")
   public ResponseEntity<AccessTokenResponse> reissue(
       @CookieValue("refresh_token") String refreshToken, HttpServletResponse response) {
-    TokenDto tokenResponse = authService.reissue(refreshToken);
+    TokenDto tokenDto = authService.reissue(refreshToken);
 
-    ResponseCookie cookie = createRefreshTokenCookie(tokenResponse.refreshToken());
+    ResponseCookie cookie = createRefreshTokenCookie(tokenDto.refreshToken());
     response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-    return ResponseEntity.ok(AccessTokenResponse.from(tokenResponse.accessToken()));
+    return ResponseEntity.ok(AccessTokenResponse.from(tokenDto.accessToken()));
   }
 
   private ResponseCookie createRefreshTokenCookie(String refreshToken) {

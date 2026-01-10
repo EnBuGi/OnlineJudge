@@ -12,8 +12,8 @@ import org.channel.ensharponlinejudge.domain.member.repository.MemberRepository;
 import org.channel.ensharponlinejudge.exception.BusinessException;
 import org.channel.ensharponlinejudge.exception.enums.AuthErrorCode;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,7 +26,7 @@ public class AuthService {
 
   private final MemberRepository memberRepository;
   private final PasswordEncoder passwordEncoder;
-  private final AuthenticationManagerBuilder authenticationManagerBuilder;
+  private final AuthenticationManager authenticationManager;
   private final JwtTokenProvider jwtTokenProvider;
   private final RedisTemplate<String, String> redisTemplate;
 
@@ -46,8 +46,7 @@ public class AuthService {
         new UsernamePasswordAuthenticationToken(request.email(), request.password());
 
     // 2. 검증 (사용자 비밀번호 체크)
-    Authentication authentication =
-        authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+    Authentication authentication = authenticationManager.authenticate(authenticationToken);
 
     // 3. 토큰 생성
     String accessToken = jwtTokenProvider.createAccessToken(authentication);

@@ -19,7 +19,7 @@ public class Member {
   private static final Pattern BCRYPT_PATTERN = Pattern.compile("^\\$2[aby]\\$.{56}$");
 
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @GeneratedValue(strategy = GenerationType.UUID)
   private Long id;
 
   @Column(nullable = false, unique = true)

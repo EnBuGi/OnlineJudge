@@ -1,6 +1,7 @@
 package org.channel.ensharponlinejudge.auth.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.channel.ensharponlinejudge.auth.controller.requests.LoginRequest;
 import org.channel.ensharponlinejudge.auth.controller.requests.SignupRequest;
@@ -24,35 +25,36 @@ public class AuthController {
   private long refreshTokenMaxAgeSeconds;
 
   @PostMapping("/members")
-  public ResponseEntity<String> signup(@RequestBody SignupRequest request) {
+  public ResponseEntity<String> signup(@Valid @RequestBody SignupRequest request) {
     authService.signup(request);
     return ResponseEntity.ok("회원가입 성공");
   }
 
   @PostMapping("/auth/token")
-  public ResponseEntity<AccessTokenResponse> login(@RequestBody LoginRequest request, HttpServletResponse response) {
-    TokenDto tokenDto = authService.login(request);
+  public ResponseEntity<AccessTokenResponse> login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
+    TokenDto tokenResponse = authService.login(request);
 
-    ResponseCookie cookie = createRefreshTokenCookie(tokenDto.refreshToken());
+    ResponseCookie cookie = createRefreshTokenCookie(tokenResponse.refreshToken());
     response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-    return ResponseEntity.ok(AccessTokenResponse.from(tokenDto.accessToken()));
+    return ResponseEntity.ok(AccessTokenResponse.from(tokenResponse.accessToken()));
   }
 
   @DeleteMapping("/auth/token")
-  public ResponseEntity<String> logout(@RequestHeader("Authorization") String accessToken) {
+  public ResponseEntity<String> logout(@RequestHeader("Authorization") String accessToken,
+                                       @CookieValue("refresh_token") String refreshToken) {
     authService.logout(accessToken.substring(7));
     return ResponseEntity.ok("로그아웃 성공");
   }
 
   @PostMapping("/auth/token/reissue")
   public ResponseEntity<AccessTokenResponse> reissue(@CookieValue("refresh_token") String refreshToken, HttpServletResponse response) {
-    TokenDto tokenDto = authService.reissue(refreshToken);
+    TokenDto tokenResponse = authService.reissue(refreshToken);
 
-    ResponseCookie cookie = createRefreshTokenCookie(tokenDto.refreshToken());
+    ResponseCookie cookie = createRefreshTokenCookie(tokenResponse.refreshToken());
     response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-    return ResponseEntity.ok(AccessTokenResponse.from(tokenDto.accessToken()));
+    return ResponseEntity.ok(AccessTokenResponse.from(tokenResponse.accessToken()));
   }
 
   private ResponseCookie createRefreshTokenCookie(String refreshToken) {
@@ -60,7 +62,7 @@ public class AuthController {
         .httpOnly(true)
         .secure(true)
         .path("/")
-        .maxAge(refreshTokenMaxAgeSeconds)
+        .maxAge(refreshTokenMaxAgeSeconds) // @Value 값 사용
         .sameSite("Strict")
         .build();
   }

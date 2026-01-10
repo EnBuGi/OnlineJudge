@@ -2,7 +2,8 @@ package org.channel.ensharponlinejudge.auth.service;
 
 import jakarta.transaction.Transactional;
 import org.channel.ensharponlinejudge.auth.controller.requests.LoginRequest;
-import org.channel.ensharponlinejudge.auth.service.dtos.TokenResponse;
+import org.channel.ensharponlinejudge.auth.controller.requests.SignupRequest;
+import org.channel.ensharponlinejudge.auth.service.dtos.TokenDto;
 import org.channel.ensharponlinejudge.domain.member.entity.Member;
 import org.channel.ensharponlinejudge.domain.member.repository.MemberRepository;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -27,7 +28,7 @@ public class AuthService {
   private final RedisTemplate<String, String> redisTemplate;
 
   @Transactional
-  public void signup(LoginRequest request) {
+  public void signup(SignupRequest request) {
     if (memberRepository.existsByEmail(request.email())) {
       throw new RuntimeException("이미 가입되어 있는 유저입니다.");
     }
@@ -36,7 +37,7 @@ public class AuthService {
   }
 
   @Transactional
-  public TokenResponse login(LoginRequest request) {
+  public TokenDto login(LoginRequest request) {
     // 1. Email/PW 기반 Authentication 객체 생성
     UsernamePasswordAuthenticationToken authenticationToken =
         new UsernamePasswordAuthenticationToken(request.email(), request.password());
@@ -56,14 +57,14 @@ public class AuthService {
         TimeUnit.DAYS
     );
 
-    return TokenResponse.builder()
+    return TokenDto.builder()
         .accessToken(accessToken)
         .refreshToken(refreshToken)
         .build();
   }
 
   @Transactional
-  public void logout(String accessToken, String refreshToken) {
+  public void logout(String accessToken) {
     // 1. Access Token 검증
     if (!jwtTokenProvider.validateToken(accessToken)) {
       throw new RuntimeException("잘못된 요청입니다.");
@@ -82,7 +83,7 @@ public class AuthService {
   }
 
   @Transactional
-  public TokenResponse reissue(String refreshToken) {
+  public TokenDto reissue(String refreshToken) {
     // 1. Refresh Token 검증
     if (!jwtTokenProvider.validateToken(refreshToken)) {
       throw new RuntimeException("Refresh Token이 유효하지 않습니다.");
@@ -107,7 +108,7 @@ public class AuthService {
         TimeUnit.DAYS
     );
 
-    return TokenResponse.builder()
+    return TokenDto.builder()
         .accessToken(newAccessToken)
         .refreshToken(newRefreshToken)
         .build();

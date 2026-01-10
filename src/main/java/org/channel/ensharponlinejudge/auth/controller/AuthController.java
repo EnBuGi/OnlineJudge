@@ -21,7 +21,7 @@ public class AuthController {
 
   private final AuthService authService;
 
-  @Value("${jwt.cookie.refresh-token-max-age-seconds}")
+  @Value("${jwt.cookie.refresh-token-max-age-seconds}") // @Value 필드 추가
   private long refreshTokenMaxAgeSeconds;
 
   @PostMapping("/members")
@@ -51,7 +51,7 @@ public class AuthController {
   public ResponseEntity<AccessTokenResponse> reissue(@CookieValue("refresh_token") String refreshToken, HttpServletResponse response) {
     TokenDto tokenResponse = authService.reissue(refreshToken);
 
-    ResponseCookie cookie = createRefreshTokenCookie(tokenResponse.refreshToken());
+    ResponseCookie cookie = createRefreshTokenCookie(tokenResponse.refreshToken()); // 내부 메소드 사용
     response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
     return ResponseEntity.ok(AccessTokenResponse.from(tokenResponse.accessToken()));

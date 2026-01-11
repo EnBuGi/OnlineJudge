@@ -9,11 +9,14 @@ import org.channel.ensharponlinejudge.auth.controller.requests.WithdrawRequest;
 import org.channel.ensharponlinejudge.auth.service.AuthService;
 import org.channel.ensharponlinejudge.auth.service.dtos.AccessTokenResponse;
 import org.channel.ensharponlinejudge.auth.service.dtos.TokenDto;
+import org.channel.ensharponlinejudge.exception.BusinessException;
+import org.channel.ensharponlinejudge.exception.enums.AuthErrorCode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -59,7 +62,7 @@ public class AuthController {
   @DeleteMapping("/auth/token")
   public ResponseEntity<String> logout(
       @Parameter(hidden = true) @RequestHeader("Authorization") String accessToken) {
-    authService.logout(accessToken.substring(7));
+    authService.logout(resolveToken(accessToken));
     return ResponseEntity.ok("로그아웃 성공");
   }
 
@@ -84,8 +87,15 @@ public class AuthController {
   public ResponseEntity<String> withdraw(
       @Parameter(hidden = true) @RequestHeader("Authorization") String accessToken,
       @Valid @RequestBody WithdrawRequest request) {
-    authService.withdraw(accessToken.substring(7), request.password());
+    authService.withdraw(resolveToken(accessToken), request.password());
     return ResponseEntity.ok("회원 탈퇴 성공");
+  }
+
+  private String resolveToken(String authorizationHeader) {
+    if (StringUtils.hasText(authorizationHeader) && authorizationHeader.startsWith("Bearer ")) {
+      return authorizationHeader.substring(7);
+    }
+    throw new BusinessException(AuthErrorCode.INVALID_TOKEN);
   }
 
   private ResponseCookie createRefreshTokenCookie(String refreshToken) {

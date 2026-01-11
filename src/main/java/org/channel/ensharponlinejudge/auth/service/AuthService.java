@@ -1,7 +1,5 @@
 package org.channel.ensharponlinejudge.auth.service;
 
-import jakarta.transaction.Transactional;
-
 import org.channel.ensharponlinejudge.auth.controller.requests.LoginRequest;
 import org.channel.ensharponlinejudge.auth.controller.requests.SignupRequest;
 import org.channel.ensharponlinejudge.auth.service.dtos.TokenDto;
@@ -16,6 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 
@@ -95,6 +94,7 @@ public class AuthService {
     return issueTokens(authentication);
   }
 
+  @Transactional
   public void withdraw(String accessToken, String password) {
     // 1. Access Token 검증 및 Authentication 조회
     if (!jwtTokenProvider.validateToken(accessToken)) {
@@ -125,7 +125,8 @@ public class AuthService {
     String accessToken = jwtTokenProvider.createAccessToken(authentication);
     String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
 
-    tokenStore.saveRefreshToken(authentication.getName(), refreshToken, jwtTokenProvider.getRefreshTokenValidity());
+    tokenStore.saveRefreshToken(
+        authentication.getName(), refreshToken, jwtTokenProvider.getRefreshTokenValidity());
 
     return TokenDto.builder().accessToken(accessToken).refreshToken(refreshToken).build();
   }

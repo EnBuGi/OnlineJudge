@@ -59,7 +59,10 @@ public class AuthController {
       @Valid @RequestBody LoginRequest request, HttpServletResponse response) {
     TokenDto tokenDto = authService.login(request);
 
-    ResponseCookie cookie = createRefreshTokenCookie(tokenDto.refreshToken());
+    ResponseCookie cookie =
+        setRefreshTokenCookie(
+            tokenDto.refreshToken(),
+            refreshTokenMaxAgeSeconds > 0 ? refreshTokenMaxAgeSeconds : 1209600);
     response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
     return ResponseEntity.ok(AccessTokenResponse.from(tokenDto.accessToken()));
@@ -95,7 +98,10 @@ public class AuthController {
       @CookieValue("refresh_token") String refreshToken, HttpServletResponse response) {
     TokenDto tokenDto = authService.reissue(refreshToken);
 
-    ResponseCookie cookie = createRefreshTokenCookie(tokenDto.refreshToken());
+    ResponseCookie cookie =
+        setRefreshTokenCookie(
+            tokenDto.refreshToken(),
+            refreshTokenMaxAgeSeconds > 0 ? refreshTokenMaxAgeSeconds : 1209600);
     response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
     return ResponseEntity.ok(AccessTokenResponse.from(tokenDto.accessToken()));
@@ -107,8 +113,13 @@ public class AuthController {
   @DeleteMapping("/members")
   public ResponseEntity<String> withdraw(
       @Parameter(hidden = true) @RequestHeader("Authorization") String accessToken,
-      @Valid @RequestBody WithdrawRequest request) {
+      @Valid @RequestBody WithdrawRequest request,
+      HttpServletResponse response) {
     authService.withdraw(resolveToken(accessToken), request.password());
+
+    ResponseCookie cookie = setRefreshTokenCookie("", 0);
+    response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
     return ResponseEntity.ok("회원 탈퇴 성공");
   }
 
@@ -119,9 +130,7 @@ public class AuthController {
     throw new BusinessException(AuthErrorCode.INVALID_TOKEN);
   }
 
-  private ResponseCookie createRefreshTokenCookie(String refreshToken) {
-    long maxAge = refreshTokenMaxAgeSeconds > 0 ? refreshTokenMaxAgeSeconds : 1209600;
-
+  private ResponseCookie setRefreshTokenCookie(String refreshToken, long maxAge) {
     return ResponseCookie.from("refresh_token", refreshToken)
         .httpOnly(true)
         .secure(refreshTokenCookieSecure)

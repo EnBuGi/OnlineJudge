@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 
 import javax.crypto.SecretKey;
 
-import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -22,6 +21,7 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SecurityException;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -30,8 +30,7 @@ public class JwtTokenProvider {
 
   private final SecretKey key;
   private final long accessTokenValidity;
-  @Getter
-  private final long refreshTokenValidity;
+  @Getter private final long refreshTokenValidity;
 
   public JwtTokenProvider(
       @Value("${jwt.secret}") String secret,

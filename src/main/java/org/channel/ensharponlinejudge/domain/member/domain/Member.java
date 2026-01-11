@@ -1,4 +1,4 @@
-package org.channel.ensharponlinejudge.domain.member.entity;
+package org.channel.ensharponlinejudge.domain.member.domain;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,10 +30,11 @@ public class Member {
   private String password;
 
   @ElementCollection(fetch = FetchType.EAGER)
-  private List<String> roles;
+  @Enumerated(EnumType.STRING)
+  private List<Role> roles;
 
   @Builder
-  private Member(UUID id, String email, String password, List<String> roles) {
+  private Member(UUID id, String email, String password, List<Role> roles) {
     validatePassword(password);
     this.id = id;
     this.email = email;
@@ -45,7 +46,7 @@ public class Member {
     return Member.builder()
         .email(email)
         .password(password)
-        .roles(Collections.singletonList("ROLE_USER"))
+        .roles(Collections.singletonList(Role.ROLE_USER))
         .build();
   }
 

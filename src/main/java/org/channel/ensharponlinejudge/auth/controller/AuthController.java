@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
@@ -56,8 +57,7 @@ public class AuthController {
       description = "사용자 로그아웃을 처리합니다. Access Token을 만료시켜 더 이상 사용할 수 없게 합니다.")
   @DeleteMapping("/auth/token")
   public ResponseEntity<String> logout(
-      @RequestHeader("Authorization") String accessToken,
-      @CookieValue("refresh_token") String refreshToken) {
+      @Parameter(hidden = true) @RequestHeader("Authorization") String accessToken) {
     authService.logout(accessToken.substring(7));
     return ResponseEntity.ok("로그아웃 성공");
   }

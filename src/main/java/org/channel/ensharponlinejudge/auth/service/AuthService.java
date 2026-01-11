@@ -6,7 +6,7 @@ import org.channel.ensharponlinejudge.auth.controller.requests.LoginRequest;
 import org.channel.ensharponlinejudge.auth.controller.requests.SignupRequest;
 import org.channel.ensharponlinejudge.auth.service.dtos.TokenDto;
 import org.channel.ensharponlinejudge.auth.service.store.TokenStore;
-import org.channel.ensharponlinejudge.domain.member.entity.Member;
+import org.channel.ensharponlinejudge.domain.member.domain.Member;
 import org.channel.ensharponlinejudge.domain.member.repository.MemberRepository;
 import org.channel.ensharponlinejudge.exception.BusinessException;
 import org.channel.ensharponlinejudge.exception.enums.AuthErrorCode;
@@ -75,11 +75,13 @@ public class AuthService {
     }
 
     Authentication authentication = jwtTokenProvider.getAuthentication(refreshToken);
-    
+
     // 2. TokenStore에 저장된 RT 조회 (없으면 예외 발생)
     // orElseThrow를 사용하여 null 처리를 방지하고, 토큰이 없으면 즉시 '유효하지 않은 토큰' 예외 발생
-    String storedRefreshToken = tokenStore.getRefreshToken(authentication.getName())
-        .orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_TOKEN));
+    String storedRefreshToken =
+        tokenStore
+            .getRefreshToken(authentication.getName())
+            .orElseThrow(() -> new BusinessException(AuthErrorCode.INVALID_TOKEN));
 
     // 3. 토큰 일치 여부 확인
     if (!refreshToken.equals(storedRefreshToken)) {
@@ -95,15 +97,8 @@ public class AuthService {
     String accessToken = jwtTokenProvider.createAccessToken(authentication);
     String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
 
-    tokenStore.saveRefreshToken(
-        authentication.getName(),
-        refreshToken,
-        REFRESH_TOKEN_VALIDITY_MS
-    );
+    tokenStore.saveRefreshToken(authentication.getName(), refreshToken, REFRESH_TOKEN_VALIDITY_MS);
 
-    return TokenDto.builder()
-        .accessToken(accessToken)
-        .refreshToken(refreshToken)
-        .build();
+    return TokenDto.builder().accessToken(accessToken).refreshToken(refreshToken).build();
   }
 }

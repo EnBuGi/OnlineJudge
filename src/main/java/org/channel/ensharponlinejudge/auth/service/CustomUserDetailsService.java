@@ -3,7 +3,7 @@ package org.channel.ensharponlinejudge.auth.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.channel.ensharponlinejudge.domain.member.entity.Member;
+import org.channel.ensharponlinejudge.domain.member.domain.Member;
 import org.channel.ensharponlinejudge.domain.member.repository.MemberRepository;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -27,7 +27,9 @@ public class CustomUserDetailsService implements UserDetailsService {
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
     Member member = memberRepository.findByEmail(username);
     List<GrantedAuthority> grantedAuthorities =
-        member.getRoles().stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
+        member.getRoles().stream()
+            .map(role -> new SimpleGrantedAuthority(role.name()))
+            .collect(Collectors.toList());
 
     // Spring Security는 UserDetails 인터페이스의 구현체로 사용자 정보를 다룹니다.
     return new User(member.getEmail(), member.getPassword(), grantedAuthorities);

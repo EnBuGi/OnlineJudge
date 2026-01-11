@@ -89,6 +89,7 @@ public class JwtTokenProvider {
 
     Collection<? extends GrantedAuthority> authorities =
         Arrays.stream(claims.get("auth").toString().split(","))
+            .filter(auth -> !auth.isBlank())
             .map(SimpleGrantedAuthority::new)
             .collect(Collectors.toList());
 
@@ -116,7 +117,8 @@ public class JwtTokenProvider {
   // 남은 유효시간 계산 (로그아웃 시 블랙리스트 TTL 설정용)
   public long getExpiration(String token) {
     Date expiration = parseClaims(token).getExpiration();
-    return expiration.toInstant().toEpochMilli() - System.currentTimeMillis();
+    long remaining = expiration.toInstant().toEpochMilli() - System.currentTimeMillis();
+    return Math.max(0, remaining);
   }
 
   private Claims parseClaims(String token) {

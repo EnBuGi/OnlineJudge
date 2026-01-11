@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -16,10 +17,14 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class TokenStore {
 
-  private record TokenInfo(String value, long expirationTime) {
-    private TokenInfo(String value, long expirationTime) {
+  @Getter
+  private static final class TokenInfo {
+    private final String value;
+    private final long expirationTime;
+
+    private TokenInfo(String value, long durationInMillis) {
       this.value = value;
-      this.expirationTime = System.currentTimeMillis() + expirationTime;
+      this.expirationTime = System.currentTimeMillis() + durationInMillis;
     }
 
     private boolean isExpired() {
@@ -42,7 +47,7 @@ public class TokenStore {
   public Optional<String> getRefreshToken(String email) {
     TokenInfo tokenInfo = refreshTokenStore.get(email);
     if (tokenInfo != null && !tokenInfo.isExpired()) {
-      return Optional.of(tokenInfo.value());
+      return Optional.of(tokenInfo.getValue());
     }
     return Optional.empty();
   }

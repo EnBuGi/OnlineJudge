@@ -9,8 +9,10 @@ import jakarta.persistence.*;
 
 import org.channel.ensharponlinejudge.exception.BusinessException;
 import org.channel.ensharponlinejudge.exception.enums.AuthErrorCode;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.type.SqlTypes;
 
 import lombok.*;
 
@@ -18,8 +20,7 @@ import lombok.*;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLDelete(
-    sql =
-        "UPDATE member SET is_deleted = true, email = CONCAT(email, '-del-', HEX(id)) WHERE id = ?")
+    sql = "UPDATE member SET is_deleted = true, email = CONCAT(email, '-del-', id) WHERE id = ?")
 @SQLRestriction("is_deleted = false")
 public class Member {
 
@@ -27,6 +28,7 @@ public class Member {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
+  @JdbcTypeCode(SqlTypes.VARCHAR)
   private UUID id;
 
   @Column(nullable = false, unique = true)

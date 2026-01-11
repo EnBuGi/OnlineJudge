@@ -5,10 +5,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
@@ -17,18 +18,18 @@ public class TokenStore {
 
   private record TokenInfo(String value, long expirationTime) {
     private TokenInfo(String value, long expirationTime) {
-        this.value = value;
-        this.expirationTime = System.currentTimeMillis() + expirationTime;
-      }
+      this.value = value;
+      this.expirationTime = System.currentTimeMillis() + expirationTime;
+    }
 
     private boolean isExpired() {
-        return System.currentTimeMillis() > expirationTime;
-      }
+      return System.currentTimeMillis() > expirationTime;
     }
+  }
 
   // Key: Email, Value: TokenInfo (RefreshToken)
   private final Map<String, TokenInfo> refreshTokenStore = new ConcurrentHashMap<>();
-  
+
   // Key: AccessToken, Value: ExpirationTime (Blacklist)
   private final Map<String, Long> blackListStore = new ConcurrentHashMap<>();
 
@@ -77,7 +78,8 @@ public class TokenStore {
     int removedBlacklistCount = 0;
 
     // Refresh Token 정리
-    Iterator<Map.Entry<String, TokenInfo>> refreshIterator = refreshTokenStore.entrySet().iterator();
+    Iterator<Map.Entry<String, TokenInfo>> refreshIterator =
+        refreshTokenStore.entrySet().iterator();
     while (refreshIterator.hasNext()) {
       if (refreshIterator.next().getValue().isExpired()) {
         refreshIterator.remove();
@@ -93,10 +95,12 @@ public class TokenStore {
         removedBlacklistCount++;
       }
     }
-    
+
     if (removedRefreshTokenCount > 0 || removedBlacklistCount > 0) {
-      log.info("Expired tokens cleaned up: {} refresh tokens, {} blacklist tokens.", 
-          removedRefreshTokenCount, removedBlacklistCount);
+      log.info(
+          "Expired tokens cleaned up: {} refresh tokens, {} blacklist tokens.",
+          removedRefreshTokenCount,
+          removedBlacklistCount);
     }
   }
 }

@@ -5,10 +5,10 @@ import java.util.Collections;
 
 import org.channel.ensharponlinejudge.auth.filter.JwtAuthenticationFilter;
 import org.channel.ensharponlinejudge.auth.service.JwtTokenProvider;
+import org.channel.ensharponlinejudge.auth.service.store.TokenStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -41,7 +41,7 @@ public class SecurityConfig {
   private String[] postPermitUrls;
 
   private final JwtTokenProvider jwtTokenProvider;
-  private final RedisTemplate<String, String> redisTemplate;
+  private final TokenStore tokenStore;
 
   @Bean
   public PasswordEncoder passwordEncoder() {
@@ -73,7 +73,7 @@ public class SecurityConfig {
                     .anyRequest()
                     .authenticated())
         .addFilterBefore(
-            new JwtAuthenticationFilter(jwtTokenProvider, redisTemplate),
+            new JwtAuthenticationFilter(jwtTokenProvider, tokenStore),
             UsernamePasswordAuthenticationFilter.class);
 
     return http.build();

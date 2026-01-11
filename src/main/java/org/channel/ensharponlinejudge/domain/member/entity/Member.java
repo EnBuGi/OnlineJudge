@@ -2,6 +2,7 @@ package org.channel.ensharponlinejudge.domain.member.entity;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 import jakarta.persistence.*;
@@ -20,7 +21,7 @@ public class Member {
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
-  private Long id;
+  private UUID id;
 
   @Column(nullable = false, unique = true)
   private String email;
@@ -32,7 +33,7 @@ public class Member {
   private List<String> roles;
 
   @Builder
-  private Member(Long id, String email, String password, List<String> roles) {
+  private Member(UUID id, String email, String password, List<String> roles) {
     validatePassword(password);
     this.id = id;
     this.email = email;

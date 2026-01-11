@@ -1,5 +1,7 @@
 package org.channel.ensharponlinejudge.auth.service;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -38,7 +40,7 @@ public class JwtTokenProvider {
       throw new IllegalArgumentException("JWT 비밀 키가 설정되지 않았습니다.");
     }
 
-    byte[] keyBytes = Decoders.BASE64.decode(secret); // 혹은 일반 문자열이면 getBytes()
+    byte[] keyBytes = Decoders.BASE64.decode(secret);
     this.key = Keys.hmacShaKeyFor(keyBytes);
     this.accessTokenValidity = accessTokenValidity;
     this.refreshTokenValidity = refreshTokenValidity;
@@ -60,14 +62,15 @@ public class JwtTokenProvider {
             .map(GrantedAuthority::getAuthority)
             .collect(Collectors.joining(","));
 
-    long now = (new Date()).getTime();
-    Date validityDate = new Date(now + validity);
+    // Modern Java: Use Instant instead of Date for calculation
+    Instant now = Instant.now();
+    Date validityDate = Date.from(now.plusMillis(validity));
 
     return Jwts.builder()
         .subject(authentication.getName())
         .claim("auth", authorities)
         .signWith(key)
-        .expiration(validityDate)
+        .expiration(validityDate) // JJWT still uses java.util.Date for API
         .compact();
   }
 
@@ -93,16 +96,22 @@ public class JwtTokenProvider {
     try {
       Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
       return true;
-    } catch (SecurityException | MalformedJwtException e) {
-      log.info("잘못된 JWT 서명입니다.");
-    } catch (ExpiredJwtException e) {
-      log.info("만료된 JWT 토큰입니다.");
-    } catch (UnsupportedJwtException e) {
-      log.info("지원되지 않는 JWT 토큰입니다.");
-    } catch (IllegalArgumentException e) {
-      log.info("JWT 토큰이 잘못되었습니다.");
+    } catch (RuntimeException e) { // JJWT exceptions extend RuntimeException
+      switch (e) {
+        case SecurityException _, MalformedJwtException _ -> log.info("잘못된 JWT 서명입니다.");
+        case ExpiredJwtException _ -> log.info("만료된 JWT 토큰입니다.");
+        case UnsupportedJwtException _ -> log.info("지원되지 않는 JWT 토큰입니다.");
+        case IllegalArgumentException _ -> log.info("JWT 토큰이 잘못되었습니다.");
+        default -> log.info("알 수 없는 JWT 오류입니다: {}", e.getMessage());
+      }
     }
     return false;
+  }
+
+  // 남은 유효시간 계산 (로그아웃 시 블랙리스트 TTL 설정용)
+  public long getExpiration(String token) {
+    Date expiration = parseClaims(token).getExpiration();
+    return expiration.toInstant().toEpochMilli() - System.currentTimeMillis();
   }
 
   private Claims parseClaims(String token) {
@@ -111,12 +120,5 @@ public class JwtTokenProvider {
     } catch (ExpiredJwtException e) {
       return e.getClaims();
     }
-  }
-
-  // 남은 유효시간 계산 (로그아웃 시 Redis 블랙리스트 TTL 설정용)
-  public long getExpiration(String token) {
-    Date expiration = parseClaims(token).getExpiration();
-    long now = new Date().getTime();
-    return (expiration.getTime() - now);
   }
 }

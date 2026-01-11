@@ -10,6 +10,7 @@ import org.channel.ensharponlinejudge.domain.member.domain.Member;
 import org.channel.ensharponlinejudge.domain.member.repository.MemberRepository;
 import org.channel.ensharponlinejudge.exception.BusinessException;
 import org.channel.ensharponlinejudge.exception.enums.AuthErrorCode;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -37,7 +38,12 @@ public class AuthService {
       throw new BusinessException(AuthErrorCode.USER_ALREADY_EXISTS);
     }
     Member member = Member.initialize(request.email(), passwordEncoder.encode(request.password()));
-    memberRepository.save(member);
+    try {
+      memberRepository.save(member);
+      memberRepository.flush();
+    } catch (DataIntegrityViolationException e) {
+      throw new BusinessException(AuthErrorCode.USER_ALREADY_EXISTS);
+    }
   }
 
   public TokenDto login(LoginRequest request) {

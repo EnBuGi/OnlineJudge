@@ -17,6 +17,10 @@ public enum AuthErrorCode implements ErrorCode {
   LOGIN_FAILED("로그인에 실패했습니다.", HttpStatus.UNAUTHORIZED),
 
   INVALID_PASSWORD_FORMAT("비밀번호는 암호화되어야 합니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+
+  USER_NOT_FOUND("가입되지 않은 유저입니다.", HttpStatus.NOT_FOUND),
+
+  PASSWORD_MISMATCH("비밀번호가 일치하지 않습니다.", HttpStatus.UNAUTHORIZED),
   ;
 
   private final String message;

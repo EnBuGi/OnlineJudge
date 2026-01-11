@@ -9,12 +9,16 @@ import jakarta.persistence.*;
 
 import org.channel.ensharponlinejudge.exception.BusinessException;
 import org.channel.ensharponlinejudge.exception.enums.AuthErrorCode;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import lombok.*;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SQLDelete(sql = "UPDATE member SET is_deleted = true, email = CONCAT(email, '-del-', HEX(id)) WHERE id = ?")
+@SQLRestriction("is_deleted = false")
 public class Member {
 
   private static final Pattern BCRYPT_PATTERN = Pattern.compile("^\\$2[aby]\\$.{56}$");
@@ -33,13 +37,17 @@ public class Member {
   @Enumerated(EnumType.STRING)
   private List<Role> roles;
 
+  @Column(nullable = false)
+  private boolean isDeleted = false;
+
   @Builder
-  private Member(UUID id, String email, String password, List<Role> roles) {
+  private Member(UUID id, String email, String password, List<Role> roles, boolean isDeleted) {
     validatePassword(password);
     this.id = id;
     this.email = email;
     this.password = password;
     this.roles = roles;
+    this.isDeleted = isDeleted;
   }
 
   public static Member initialize(String email, String password) {
@@ -47,6 +55,7 @@ public class Member {
         .email(email)
         .password(password)
         .roles(Collections.singletonList(Role.ROLE_USER))
+        .isDeleted(false)
         .build();
   }
 

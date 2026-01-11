@@ -92,6 +92,31 @@ public class AuthService {
     return issueTokens(authentication);
   }
 
+  public void withdraw(String accessToken, String password) {
+    // 1. Access Token 검증 및 Authentication 조회
+    if (!jwtTokenProvider.validateToken(accessToken)) {
+      throw new BusinessException(AuthErrorCode.INVALID_TOKEN);
+    }
+    Authentication authentication = jwtTokenProvider.getAuthentication(accessToken);
+
+    // 2. 사용자 조회
+    Member member = memberRepository.findByEmail(authentication.getName());
+    if (member == null) {
+      throw new BusinessException(AuthErrorCode.USER_NOT_FOUND);
+    }
+
+    // 3. 비밀번호 확인
+    if (!passwordEncoder.matches(password, member.getPassword())) {
+      throw new BusinessException(AuthErrorCode.PASSWORD_MISMATCH);
+    }
+
+    // 4. 회원 탈퇴 (Soft Delete)
+    memberRepository.delete(member);
+
+    // 5. 로그아웃 처리 (토큰 무효화)
+    logout(accessToken);
+  }
+
   // 토큰 생성 및 저장 로직 추출 (Login, Reissue 공통 사용)
   private TokenDto issueTokens(Authentication authentication) {
     String accessToken = jwtTokenProvider.createAccessToken(authentication);

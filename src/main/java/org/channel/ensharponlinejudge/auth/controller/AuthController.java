@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 
 import org.channel.ensharponlinejudge.auth.controller.requests.LoginRequest;
 import org.channel.ensharponlinejudge.auth.controller.requests.SignupRequest;
+import org.channel.ensharponlinejudge.auth.controller.requests.WithdrawRequest;
 import org.channel.ensharponlinejudge.auth.service.AuthService;
 import org.channel.ensharponlinejudge.auth.service.dtos.AccessTokenResponse;
 import org.channel.ensharponlinejudge.auth.service.dtos.TokenDto;
@@ -74,6 +75,17 @@ public class AuthController {
     response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
     return ResponseEntity.ok(AccessTokenResponse.from(tokenDto.accessToken()));
+  }
+
+  @Operation(
+      summary = "회원 탈퇴",
+      description = "회원 탈퇴를 처리합니다. 비밀번호 확인 후 회원은 삭제 상태로 변경되며, 관련 토큰은 만료됩니다.")
+  @DeleteMapping("/members")
+  public ResponseEntity<String> withdraw(
+      @Parameter(hidden = true) @RequestHeader("Authorization") String accessToken,
+      @Valid @RequestBody WithdrawRequest request) {
+    authService.withdraw(accessToken.substring(7), request.password());
+    return ResponseEntity.ok("회원 탈퇴 성공");
   }
 
   private ResponseCookie createRefreshTokenCookie(String refreshToken) {

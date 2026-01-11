@@ -24,8 +24,9 @@ public class CustomUserDetailsService implements UserDetailsService {
 
   @Override
   @Transactional
-  public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    Member member = memberRepository.findByEmail(username);
+  public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+    Member member = memberRepository.findByEmail(email)
+        .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + email));
     List<GrantedAuthority> grantedAuthorities =
         member.getRoles().stream()
             .map(role -> new SimpleGrantedAuthority(role.name()))

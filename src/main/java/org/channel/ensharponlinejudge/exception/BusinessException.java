@@ -1,5 +1,7 @@
 package org.channel.ensharponlinejudge.exception;
 
+import org.channel.ensharponlinejudge.exception.enums.ErrorCode;
+
 import lombok.Getter;
 
 @Getter

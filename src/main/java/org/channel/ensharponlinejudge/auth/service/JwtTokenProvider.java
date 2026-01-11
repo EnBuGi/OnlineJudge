@@ -39,7 +39,13 @@ public class JwtTokenProvider {
       throw new IllegalArgumentException("JWT 비밀 키가 설정되지 않았습니다.");
     }
 
-    byte[] keyBytes = Decoders.BASE64.decode(secret);
+    byte[] keyBytes;
+    try {
+      keyBytes = Decoders.BASE64.decode(secret);
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException("JWT 비밀 키가 유효한 Base64 형식이 아닙니다.", e);
+    }
+
     this.key = Keys.hmacShaKeyFor(keyBytes);
     this.accessTokenValidity = accessTokenValidity;
     this.refreshTokenValidity = refreshTokenValidity;

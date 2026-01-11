@@ -106,7 +106,11 @@ public class AuthService {
     Authentication authentication = jwtTokenProvider.getAuthentication(accessToken);
 
     // 2. 사용자 조회
-    Member member = memberRepository.findByEmail(authentication.getName());
+    Member member =
+        memberRepository
+            .findByEmail(authentication.getName())
+            .orElseThrow(() -> new BusinessException(AuthErrorCode.USER_NOT_FOUND));
+
     if (member == null) {
       throw new BusinessException(AuthErrorCode.USER_NOT_FOUND);
     }

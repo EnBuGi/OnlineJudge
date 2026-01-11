@@ -37,7 +37,7 @@ public class Member {
   @Column(nullable = false)
   private String password;
 
-  @ElementCollection(fetch = FetchType.EAGER)
+  @ElementCollection
   @Enumerated(EnumType.STRING)
   private List<Role> roles;
 

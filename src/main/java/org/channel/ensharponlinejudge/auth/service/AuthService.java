@@ -23,9 +23,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthService {
 
-  // Refresh Token 유효 기간: 14일 (ms)
-  private static final long REFRESH_TOKEN_VALIDITY_MS = 14L * 24 * 60 * 60 * 1000;
-
   private final MemberRepository memberRepository;
   private final PasswordEncoder passwordEncoder;
   private final AuthenticationManager authenticationManager;
@@ -111,10 +108,6 @@ public class AuthService {
             .findByEmail(authentication.getName())
             .orElseThrow(() -> new BusinessException(AuthErrorCode.USER_NOT_FOUND));
 
-    if (member == null) {
-      throw new BusinessException(AuthErrorCode.USER_NOT_FOUND);
-    }
-
     // 3. 비밀번호 확인
     if (!passwordEncoder.matches(password, member.getPassword())) {
       throw new BusinessException(AuthErrorCode.PASSWORD_MISMATCH);
@@ -132,7 +125,7 @@ public class AuthService {
     String accessToken = jwtTokenProvider.createAccessToken(authentication);
     String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
 
-    tokenStore.saveRefreshToken(authentication.getName(), refreshToken, REFRESH_TOKEN_VALIDITY_MS);
+    tokenStore.saveRefreshToken(authentication.getName(), refreshToken, jwtTokenProvider.getRefreshTokenValidity());
 
     return TokenDto.builder().accessToken(accessToken).refreshToken(refreshToken).build();
   }

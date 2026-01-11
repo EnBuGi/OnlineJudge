@@ -32,8 +32,17 @@ public class AuthController {
 
   private final AuthService authService;
 
-  @Value("${jwt.cookie.refresh-token-max-age-seconds}")
+  @Value("${jwt.cookie.refresh-token-max-age-seconds:1209600}")
   private long refreshTokenMaxAgeSeconds;
+
+  @Value("${jwt.cookie.secure:true}")
+  private boolean refreshTokenCookieSecure;
+
+  @Value("${jwt.cookie.same-site:Strict}")
+  private String refreshTokenCookieSameSite;
+
+  @Value("${jwt.cookie.path:/}")
+  private String refreshTokenCookiePath;
 
   @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다.")
   @PostMapping("/members")
@@ -61,8 +70,20 @@ public class AuthController {
       description = "사용자 로그아웃을 처리합니다. Access Token을 만료시켜 더 이상 사용할 수 없게 합니다.")
   @DeleteMapping("/auth/token")
   public ResponseEntity<String> logout(
-      @Parameter(hidden = true) @RequestHeader("Authorization") String accessToken) {
+      @Parameter(hidden = true) @RequestHeader("Authorization") String accessToken,
+      HttpServletResponse response) {
     authService.logout(resolveToken(accessToken));
+
+    ResponseCookie cookie =
+        ResponseCookie.from("refresh_token", "")
+            .httpOnly(true)
+            .secure(refreshTokenCookieSecure)
+            .path(refreshTokenCookiePath)
+            .maxAge(0)
+            .sameSite(refreshTokenCookieSameSite)
+            .build();
+    response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
     return ResponseEntity.ok("로그아웃 성공");
   }
 
@@ -99,12 +120,14 @@ public class AuthController {
   }
 
   private ResponseCookie createRefreshTokenCookie(String refreshToken) {
+    long maxAge = refreshTokenMaxAgeSeconds > 0 ? refreshTokenMaxAgeSeconds : 1209600;
+
     return ResponseCookie.from("refresh_token", refreshToken)
         .httpOnly(true)
-        .secure(true)
-        .path("/")
-        .maxAge(refreshTokenMaxAgeSeconds)
-        .sameSite("Strict")
+        .secure(refreshTokenCookieSecure)
+        .path(refreshTokenCookiePath)
+        .maxAge(maxAge)
+        .sameSite(refreshTokenCookieSameSite)
         .build();
   }
 }

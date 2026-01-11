@@ -17,7 +17,9 @@ import lombok.*;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SQLDelete(sql = "UPDATE member SET is_deleted = true, email = CONCAT(email, '-del-', HEX(id)) WHERE id = ?")
+@SQLDelete(
+    sql =
+        "UPDATE member SET is_deleted = true, email = CONCAT(email, '-del-', HEX(id)) WHERE id = ?")
 @SQLRestriction("is_deleted = false")
 public class Member {
 

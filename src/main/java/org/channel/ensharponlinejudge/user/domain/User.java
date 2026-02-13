@@ -58,7 +58,7 @@ public class User {
     return User.builder()
         .email(email)
         .password(password)
-        .roles(Collections.singletonList(Role.ROLE_USER))
+        .roles(Collections.singletonList(Role.ROLE_MENTEE))
         .isDeleted(false)
         .build();
   }

@@ -4,8 +4,8 @@ import org.channel.ensharponlinejudge.auth.controller.requests.LoginRequest;
 import org.channel.ensharponlinejudge.auth.controller.requests.SignupRequest;
 import org.channel.ensharponlinejudge.auth.service.dtos.TokenDto;
 import org.channel.ensharponlinejudge.auth.service.store.TokenStore;
-import org.channel.ensharponlinejudge.member.domain.Member;
-import org.channel.ensharponlinejudge.member.repository.MemberRepository;
+import org.channel.ensharponlinejudge.user.domain.User;
+import org.channel.ensharponlinejudge.user.repository.UserRepository;
 import org.channel.ensharponlinejudge.exception.BusinessException;
 import org.channel.ensharponlinejudge.exception.enums.AuthErrorCode;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthService {
 
-  private final MemberRepository memberRepository;
+  private final UserRepository memberRepository;
   private final PasswordEncoder passwordEncoder;
   private final AuthenticationManager authenticationManager;
   private final JwtTokenProvider jwtTokenProvider;
@@ -33,7 +33,7 @@ public class AuthService {
     if (memberRepository.existsByEmail(request.email())) {
       throw new BusinessException(AuthErrorCode.USER_ALREADY_EXISTS);
     }
-    Member member = Member.initialize(request.email(), passwordEncoder.encode(request.password()));
+    User member = User.initialize(request.email(), passwordEncoder.encode(request.password()));
     try {
       memberRepository.save(member);
       memberRepository.flush();
@@ -103,7 +103,7 @@ public class AuthService {
     Authentication authentication = jwtTokenProvider.getAuthentication(accessToken);
 
     // 2. 사용자 조회
-    Member member =
+    User member =
         memberRepository
             .findByEmail(authentication.getName())
             .orElseThrow(() -> new BusinessException(AuthErrorCode.USER_NOT_FOUND));

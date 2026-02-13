@@ -1,4 +1,4 @@
-package org.channel.ensharponlinejudge.member.domain;
+package org.channel.ensharponlinejudge.user.domain;
 
 import java.util.Collections;
 import java.util.List;
@@ -22,7 +22,7 @@ import lombok.*;
 @SQLDelete(
     sql = "UPDATE member SET is_deleted = true, email = CONCAT(email, '-del-', id) WHERE id = ?")
 @SQLRestriction("is_deleted = false")
-public class Member {
+public class User {
 
   private static final Pattern BCRYPT_PATTERN = Pattern.compile("^\\$2[aby]\\$.{56}$");
 
@@ -45,7 +45,7 @@ public class Member {
   private boolean isDeleted = false;
 
   @Builder
-  private Member(UUID id, String email, String password, List<Role> roles, boolean isDeleted) {
+  private User(UUID id, String email, String password, List<Role> roles, boolean isDeleted) {
     validatePassword(password);
     this.id = id;
     this.email = email;
@@ -54,8 +54,8 @@ public class Member {
     this.isDeleted = isDeleted;
   }
 
-  public static Member initialize(String email, String password) {
-    return Member.builder()
+  public static User initialize(String email, String password) {
+    return User.builder()
         .email(email)
         .password(password)
         .roles(Collections.singletonList(Role.ROLE_USER))

@@ -3,8 +3,8 @@ package org.channel.ensharponlinejudge.auth.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.channel.ensharponlinejudge.domain.member.domain.Member;
-import org.channel.ensharponlinejudge.domain.member.repository.MemberRepository;
+import org.channel.ensharponlinejudge.member.domain.Member;
+import org.channel.ensharponlinejudge.member.repository.MemberRepository;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;

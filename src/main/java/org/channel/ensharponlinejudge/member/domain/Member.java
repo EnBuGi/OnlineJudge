@@ -1,4 +1,4 @@
-package org.channel.ensharponlinejudge.domain.member.domain;
+package org.channel.ensharponlinejudge.member.domain;
 
 import java.util.Collections;
 import java.util.List;

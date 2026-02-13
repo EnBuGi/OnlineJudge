@@ -1,14 +1,8 @@
 package org.channel.ensharponlinejudge.user.domain;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 import jakarta.persistence.*;
-
-import org.channel.ensharponlinejudge.exception.BusinessException;
-import org.channel.ensharponlinejudge.exception.enums.AuthErrorCode;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -17,55 +11,71 @@ import org.hibernate.type.SqlTypes;
 import lombok.*;
 
 @Entity
+@Table(name = "users")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLDelete(
-    sql = "UPDATE member SET is_deleted = true, email = CONCAT(email, '-del-', id) WHERE id = ?")
+    sql = "UPDATE users SET is_deleted = true, email = CONCAT(email, '-del-', id) WHERE id = ?")
 @SQLRestriction("is_deleted = false")
 public class User {
-
-  private static final Pattern BCRYPT_PATTERN = Pattern.compile("^\\$2[aby]\\$.{56}$");
 
   @Id
   @GeneratedValue(strategy = GenerationType.UUID)
   @JdbcTypeCode(SqlTypes.VARCHAR)
   private UUID id;
 
-  @Column(nullable = false, unique = true)
-  private String email;
+  @Column(name = "github_id", nullable = false, length = 50, unique = true)
+  private String githubId;
+
+  @Column(nullable = false, length = 20)
+  private String name;
 
   @Column(nullable = false)
-  private String password;
+  private int generation;
 
   @ElementCollection
   @Enumerated(EnumType.STRING)
-  private List<Role> roles;
+  private Role role;
+
+  @Column(name = "profile_image_url", nullable = false, length = 500)
+  private String profileImageUrl;
 
   @Column(nullable = false)
   private boolean isDeleted = false;
 
+
   @Builder
-  private User(UUID id, String email, String password, List<Role> roles, boolean isDeleted) {
-    validatePassword(password);
+  private User(
+          UUID id,
+          String githubId,
+          String name,
+          int generation,
+          Role role,
+          String profileImageUrl,
+          boolean isDeleted
+  ) {
     this.id = id;
-    this.email = email;
-    this.password = password;
-    this.roles = roles;
+    this.githubId = githubId;
+    this.name = name;
+    this.generation = generation;
+    this.role = role;
+    this.profileImageUrl = profileImageUrl;
     this.isDeleted = isDeleted;
   }
 
-  public static User initialize(String email, String password) {
+  public static User initialize(
+          String githubId,
+          String name,
+          int generation,
+          String profileImageUrl
+  ) {
     return User.builder()
-        .email(email)
-        .password(password)
-        .roles(Collections.singletonList(Role.ROLE_MENTEE))
-        .isDeleted(false)
-        .build();
-  }
-
-  private void validatePassword(String password) {
-    if (password == null || !BCRYPT_PATTERN.matcher(password).matches()) {
-      throw new BusinessException(AuthErrorCode.INVALID_PASSWORD_FORMAT);
-    }
+            .githubId(githubId)
+            .name(name)
+            .generation(generation)
+            .role(Role.MENTEE)
+            .profileImageUrl(profileImageUrl)
+            .isDeleted(false)
+            .build();
   }
 }

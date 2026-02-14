@@ -1,0 +1,8 @@
+package org.channel.ensharponlinejudge.submission.repository;
+
+import java.util.UUID;
+
+import org.channel.ensharponlinejudge.submission.domain.Submission;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface SubmissionRepository extends JpaRepository<Submission, UUID> {}

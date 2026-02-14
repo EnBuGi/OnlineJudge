@@ -5,8 +5,6 @@ import java.util.UUID;
 
 import jakarta.persistence.*;
 
-import org.channel.ensharponlinejudge.project.domain.Project;
-import org.channel.ensharponlinejudge.user.domain.User;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -27,13 +25,13 @@ public class Submission {
   @JdbcTypeCode(SqlTypes.VARCHAR)
   private UUID id;
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "user_id", nullable = false)
-  private User user;
+  @JdbcTypeCode(SqlTypes.VARCHAR)
+  private UUID userId;
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "project_id", nullable = false)
-  private Project project;
+  @JdbcTypeCode(SqlTypes.VARCHAR)
+  private UUID projectId;
 
   @Column(name = "repo_url", length = 255, nullable = false)
   private String repoUrl;
@@ -54,15 +52,15 @@ public class Submission {
   private int memoryUsage;
 
   @Builder
-  private Submission(User user, Project project, String repoUrl) {
-    this.user = user;
-    this.project = project;
+  private Submission(UUID userId, UUID projectId, String repoUrl) {
+    this.userId = userId;
+    this.projectId = projectId;
     this.repoUrl = repoUrl;
     this.status = SubmissionStatus.QUEUED;
   }
 
-  public static Submission initialize(User user, Project project, String repoUrl) {
+  public static Submission initialize(UUID userId, UUID projectId, String repoUrl) {
 
-    return Submission.builder().user(user).project(project).repoUrl(repoUrl).build();
+    return Submission.builder().userId(userId).projectId(projectId).repoUrl(repoUrl).build();
   }
 }

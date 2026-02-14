@@ -17,6 +17,7 @@ import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
 import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
+import org.channel.ensharponlinejudge.user.domain.User;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,7 +42,7 @@ public class SubmissionServiceTest {
     UUID projectId = UUID.randomUUID();
     String repoUrl = "http://gitbub,com/vvineey/example";
 
-    // given(projectRepository.existsById(projectId)).willReturn(false);
+    // 프로젝트는 존재 안 함
     given(projectRepository.findById(projectId)).willReturn(Optional.empty());
 
     BusinessException ex =
@@ -60,6 +61,10 @@ public class SubmissionServiceTest {
     UUID projectId = UUID.randomUUID();
     String repoUrl = "http://gitbub,com/vvineey/example";
 
+    // 프로젝트 존재
+    givenProjectExists(projectId);
+
+    // 유저는 존재 안 함
     given(userRepository.findById(userId)).willReturn(Optional.empty());
 
     BusinessException ex =
@@ -78,8 +83,8 @@ public class SubmissionServiceTest {
     UUID projectId = UUID.randomUUID();
     String repoUrl = "http://gitbub,com/vvineey/example";
 
-    // 프로젝트 존재
-    given(projectRepository.findById(projectId)).willReturn(Optional.of(mock(Project.class)));
+    // 프로젝트, 유저 존재
+    givenProjectAndUserExist(projectId, userId);
 
     // 이미 채점 중인 제출이 있다!!!
     given(
@@ -108,8 +113,8 @@ public class SubmissionServiceTest {
     UUID projectId = UUID.randomUUID();
     String repoUrl = "http://gitbub,com/vvineey/example";
 
-    // 프로젝트 존재
-    given(projectRepository.findById(projectId)).willReturn(Optional.of(mock(Project.class)));
+    // 프로젝트, 유저 존재
+    givenProjectAndUserExist(projectId, userId);
 
     // 진행중 상태는 없음
     given(
@@ -130,5 +135,22 @@ public class SubmissionServiceTest {
     assertThat(submission.getRepoUrl()).isEqualTo(repoUrl);
 
     then(submissionRepository).shouldHaveNoMoreInteractions();
+  }
+
+
+  //프로젝트 존재 기본 전제
+  private void givenProjectExists(UUID projectId) {
+    given(projectRepository.findById(projectId)).willReturn(Optional.of(mock(Project.class)));
+  }
+
+  //유저 존재 기본 전제
+  private void givenUserExists(UUID userId) {
+    given(userRepository.findById(userId)).willReturn(Optional.of(mock(User.class)));
+  }
+
+  // 프로젝트, 유저 존재 기본 전제
+  private void givenProjectAndUserExist(UUID projectId, UUID userId) {
+    givenProjectExists(projectId);
+    givenUserExists(userId);
   }
 }

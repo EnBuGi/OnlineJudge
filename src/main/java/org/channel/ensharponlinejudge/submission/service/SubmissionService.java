@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import org.channel.ensharponlinejudge.exception.BusinessException;
 import org.channel.ensharponlinejudge.exception.enums.SubmissionErrorCode;
+import org.channel.ensharponlinejudge.project.domain.Project;
 import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
 import org.springframework.stereotype.Service;
@@ -19,8 +20,7 @@ public class SubmissionService {
 
   public void submit(UUID userId, UUID projectId, String repoUrl) {
 
-    if (!projectRepository.existsById(projectId)) {
-      throw new BusinessException(SubmissionErrorCode.PROJECT_NOT_FOUND);
-    }
+    Project project = projectRepository.findById(projectId)
+            .orElseThrow(() -> new BusinessException(SubmissionErrorCode.PROJECT_NOT_FOUND));
   }
 }

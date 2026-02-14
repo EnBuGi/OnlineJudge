@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import org.channel.ensharponlinejudge.exception.BusinessException;
@@ -21,13 +22,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class SubmissionServiceTest {
 
-  @Mock
-  SubmissionRepository SubmissionRepository;
+  @Mock SubmissionRepository SubmissionRepository;
   @Mock ProjectRepository projectRepository;
   @Mock UserRepository userRepository;
 
-  @InjectMocks
-  SubmissionService projectSubmissionService;
+  @InjectMocks SubmissionService projectSubmissionService;
 
   @Test
   void 프로젝트_없으면_404() {
@@ -36,7 +35,8 @@ public class SubmissionServiceTest {
     UUID projectId = UUID.randomUUID();
     String repoUrl = "http://gitbub,com/vvineey/example";
 
-    given(projectRepository.existsById(projectId)).willReturn(false);
+    // given(projectRepository.existsById(projectId)).willReturn(false);
+    given(projectRepository.findById(projectId)).willReturn(Optional.empty());
 
     BusinessException ex =
         assertThrows(

@@ -54,6 +54,24 @@ public class SubmissionServiceTest {
   }
 
   @Test
+  void 유저_없으면_404() {
+
+    UUID userId = UUID.randomUUID();
+    UUID projectId = UUID.randomUUID();
+    String repoUrl = "http://gitbub,com/vvineey/example";
+
+    given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+    BusinessException ex =
+        assertThrows(
+            BusinessException.class, () -> submissionService.submit(userId, projectId, repoUrl));
+
+    assertThat(ex.getErrorCode()).isEqualTo(SubmissionErrorCode.USER_NOT_FOUND);
+
+    then(submissionRepository).shouldHaveNoInteractions();
+  }
+
+  @Test
   void 채점중인_제출이_있으면_409() {
 
     UUID userId = UUID.randomUUID();

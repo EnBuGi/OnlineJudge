@@ -7,6 +7,7 @@ import org.channel.ensharponlinejudge.exception.BusinessException;
 import org.channel.ensharponlinejudge.exception.enums.SubmissionErrorCode;
 import org.channel.ensharponlinejudge.project.domain.Project;
 import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
+import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
 import org.springframework.stereotype.Service;
@@ -33,5 +34,8 @@ public class SubmissionService {
     if (submissionRepository.existsByUserIdAndProjectIdAndStatusIn(userId, projectId, inProgress)) {
       throw new BusinessException(SubmissionErrorCode.SUBMISSION_IN_PROGRESS);
     }
+
+    Submission submission = Submission.initialize(userId, projectId, repoUrl);
+    submissionRepository.save(submission);
   }
 }

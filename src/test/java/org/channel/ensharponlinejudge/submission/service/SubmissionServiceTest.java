@@ -2,8 +2,7 @@ package org.channel.ensharponlinejudge.submission.service;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
@@ -15,11 +14,13 @@ import org.channel.ensharponlinejudge.exception.BusinessException;
 import org.channel.ensharponlinejudge.exception.enums.SubmissionErrorCode;
 import org.channel.ensharponlinejudge.project.domain.Project;
 import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
+import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -78,6 +79,37 @@ public class SubmissionServiceTest {
             BusinessException.class, () -> submissionService.submit(userId, projectId, repoUrl));
 
     assertThat(ex.getErrorCode()).isEqualTo(SubmissionErrorCode.SUBMISSION_IN_PROGRESS);
+
+    then(submissionRepository).shouldHaveNoMoreInteractions();
+  }
+
+  @Test
+  void 제출이_가능하면_제출된다() {
+
+    UUID userId = UUID.randomUUID();
+    UUID projectId = UUID.randomUUID();
+    String repoUrl = "http://gitbub,com/vvineey/example";
+
+    // 프로젝트 존재
+    given(projectRepository.findById(projectId)).willReturn(Optional.of(mock(Project.class)));
+
+    // 진행중 상태는 없음
+    given(
+            submissionRepository.existsByUserIdAndProjectIdAndStatusIn(
+                eq(userId), eq(projectId), any()))
+        .willReturn(false);
+
+    submissionService.submit(userId, projectId, repoUrl);
+
+    ArgumentCaptor<Submission> captor = ArgumentCaptor.forClass(Submission.class);
+
+    then(submissionRepository).should().save(captor.capture());
+
+    Submission submission = captor.getValue();
+
+    assertThat(submission.getUserId()).isEqualTo(userId);
+    assertThat(submission.getProjectId()).isEqualTo(projectId);
+    assertThat(submission.getRepoUrl()).isEqualTo(repoUrl);
 
     then(submissionRepository).shouldHaveNoMoreInteractions();
   }

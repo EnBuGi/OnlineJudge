@@ -19,6 +19,7 @@ import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
 import org.channel.ensharponlinejudge.user.domain.User;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -35,8 +36,9 @@ public class SubmissionServiceTest {
 
   @InjectMocks SubmissionService submissionService;
 
+  @DisplayName("존재하지 않는 프로젝트 제출 404 예외 테스트")
   @Test
-  void 프로젝트_없으면_404() {
+  void Given존재하지_않는_프로젝트인데When제출을_시도하면_Expoect404에러가_발생한다() {
 
     UUID userId = UUID.randomUUID();
     UUID projectId = UUID.randomUUID();
@@ -54,8 +56,9 @@ public class SubmissionServiceTest {
     then(submissionRepository).shouldHaveNoInteractions();
   }
 
+  @DisplayName("존재하지 않는 유저 제출 404 예외 테스트")
   @Test
-  void 유저_없으면_404() {
+  void Given존재하지_않는_유저인데When제출을_시도하면_Expoect404에러가_발생한다() {
 
     UUID userId = UUID.randomUUID();
     UUID projectId = UUID.randomUUID();
@@ -76,8 +79,9 @@ public class SubmissionServiceTest {
     then(submissionRepository).shouldHaveNoInteractions();
   }
 
+  @DisplayName("채점 중인 상테에서 제출 409 예외 테스트")
   @Test
-  void 채점중인_제출이_있으면_409() {
+  void Given채점중인_제출이_존재하는_상태인데When제출을_시도하면Expect409에러가_발생한다() {
 
     UUID userId = UUID.randomUUID();
     UUID projectId = UUID.randomUUID();
@@ -106,8 +110,9 @@ public class SubmissionServiceTest {
     then(submissionRepository).shouldHaveNoMoreInteractions();
   }
 
+  @DisplayName("정상 제출 테스트")
   @Test
-  void 제출이_가능하면_제출된다() {
+  void Given제출이_가능한_상태에서When제출을_시도하면Expect제출이_성공한다() {
 
     UUID userId = UUID.randomUUID();
     UUID projectId = UUID.randomUUID();
@@ -137,13 +142,12 @@ public class SubmissionServiceTest {
     then(submissionRepository).shouldHaveNoMoreInteractions();
   }
 
-
-  //프로젝트 존재 기본 전제
+  // 프로젝트 존재 기본 전제
   private void givenProjectExists(UUID projectId) {
     given(projectRepository.findById(projectId)).willReturn(Optional.of(mock(Project.class)));
   }
 
-  //유저 존재 기본 전제
+  // 유저 존재 기본 전제
   private void givenUserExists(UUID userId) {
     given(userRepository.findById(userId)).willReturn(Optional.of(mock(User.class)));
   }

@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import org.channel.ensharponlinejudge.submission.presentation.dto.request.SubmitRequest;
 import org.channel.ensharponlinejudge.submission.service.SubmissionService;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -28,7 +29,8 @@ public class SubmissionControllerTest {
   @MockitoBean SubmissionService submissionService;
 
   @Test
-  void repoUrl이_깃허브_url이_아니면_400() throws Exception {
+  @DisplayName("repoUrl이 GitHub 형식이 아니면 400을 반환한다")
+  void Given깃허브Url이_아닌데_When제출을_요청하면_Expect400에러가_발생한다() throws Exception {
 
     UUID userId = UUID.randomUUID();
     UUID projectId = UUID.randomUUID();
@@ -43,5 +45,25 @@ public class SubmissionControllerTest {
         .andExpect(status().isBadRequest());
 
     then(submissionService).shouldHaveNoInteractions();
+  }
+
+  @Test
+  @DisplayName("repoUrl이 올바르면 200을 반환한다")
+  void Given_repoUrl이_올바른Url인데_When제출을_요청하면_Expect200을반환한다() throws Exception {
+
+    UUID userId = UUID.randomUUID();
+    UUID projectId = UUID.randomUUID();
+
+    SubmitRequest submitRequest =
+        new SubmitRequest(userId, projectId, "https://github.com/vvineey/example");
+
+    mockMvc
+        .perform(
+            post("/api/submissions")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(submitRequest)))
+        .andExpect(status().isOk());
+
+    then(submissionService).should().submit(userId, projectId, submitRequest.repoUrl());
   }
 }

@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -81,6 +81,7 @@ public class SubmissionServiceTest {
     assertThat(ex.getErrorCode()).isEqualTo(SubmissionErrorCode.USER_NOT_FOUND);
 
     then(submissionRepository).shouldHaveNoInteractions();
+    then(applicationEventPublisher).shouldHaveNoInteractions();
   }
 
   @DisplayName("채점 중인 상테에서 제출 409 예외 테스트")
@@ -111,7 +112,8 @@ public class SubmissionServiceTest {
 
     assertThat(ex.getErrorCode()).isEqualTo(SubmissionErrorCode.SUBMISSION_IN_PROGRESS);
 
-    then(submissionRepository).shouldHaveNoMoreInteractions();
+    then(applicationEventPublisher).shouldHaveNoInteractions();
+    then(submissionRepository).should(org.mockito.Mockito.never()).save(any());
   }
 
   @DisplayName("정상 제출 테스트")

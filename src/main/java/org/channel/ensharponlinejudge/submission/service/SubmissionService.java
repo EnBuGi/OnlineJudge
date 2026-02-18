@@ -9,9 +9,11 @@ import org.channel.ensharponlinejudge.project.domain.Project;
 import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
 import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
+import org.channel.ensharponlinejudge.submission.infra.queue.SubmissionQueuedEvent;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
 import org.channel.ensharponlinejudge.user.domain.User;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -23,8 +25,9 @@ public class SubmissionService {
   private final ProjectRepository projectRepository;
   private final UserRepository userRepository;
   private final SubmissionRepository submissionRepository;
+  private final ApplicationEventPublisher applicationEventPublisher;
 
-  public void submit(UUID userId, UUID projectId, String repoUrl) {
+  public UUID submit(UUID userId, UUID projectId, String repoUrl) {
 
     List<SubmissionStatus> inProgress =
         List.of(SubmissionStatus.QUEUED, SubmissionStatus.PROCESSING);
@@ -44,6 +47,10 @@ public class SubmissionService {
     }
 
     Submission submission = Submission.initialize(userId, projectId, repoUrl);
-    submissionRepository.save(submission);
+    Submission savedSubmission = submissionRepository.save(submission);
+
+    applicationEventPublisher.publishEvent(new SubmissionQueuedEvent(savedSubmission.getId()));
+
+    return savedSubmission.getId();
   }
 }

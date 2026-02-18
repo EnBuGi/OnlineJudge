@@ -16,6 +16,7 @@ import org.channel.ensharponlinejudge.project.domain.Project;
 import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
 import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
+import org.channel.ensharponlinejudge.submission.infra.queue.SubmissionQueuedEvent;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
 import org.channel.ensharponlinejudge.user.domain.User;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
@@ -26,6 +27,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 public class SubmissionServiceTest {
@@ -33,6 +35,7 @@ public class SubmissionServiceTest {
   @Mock SubmissionRepository submissionRepository;
   @Mock ProjectRepository projectRepository;
   @Mock UserRepository userRepository;
+  @Mock ApplicationEventPublisher applicationEventPublisher;
 
   @InjectMocks SubmissionService submissionService;
 
@@ -140,6 +143,30 @@ public class SubmissionServiceTest {
     assertThat(submission.getRepoUrl()).isEqualTo(repoUrl);
 
     then(submissionRepository).shouldHaveNoMoreInteractions();
+  }
+
+  @Test
+  @DisplayName("정상 제출시 정상 이벤트 발행 테스트")
+  void Given제출이_가능한_상태에서When제출을_시도하면Expect이벤트가_발행된다() {
+
+    UUID userid = UUID.randomUUID();
+    UUID projectId = UUID.randomUUID();
+    String repoUrl = "http://gitbub,com/vvineey/example";
+    UUID submisssionId = UUID.randomUUID();
+
+    // 유저, 프로젝트 id
+    given(projectRepository.findById(projectId)).willReturn(Optional.of(mock(Project.class)));
+    given(userRepository.findById(userid)).willReturn(Optional.of(mock(User.class)));
+
+    Submission mockSubmission = mock(Submission.class);
+
+    // 제출 리포지토리 저장 -> 반환된 id가 submissionId 이어야 겠죠 ..?
+    given(submissionRepository.save(any())).willReturn(mockSubmission);
+    given(mockSubmission.getId()).willReturn(submisssionId);
+
+    submissionService.submit(userid, projectId, repoUrl);
+
+    then(applicationEventPublisher).should().publishEvent(new SubmissionQueuedEvent(submisssionId));
   }
 
   // 프로젝트 존재 기본 전제

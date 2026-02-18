@@ -57,6 +57,7 @@ public class SubmissionServiceTest {
     assertThat(ex.getErrorCode()).isEqualTo(SubmissionErrorCode.PROJECT_NOT_FOUND);
 
     then(submissionRepository).shouldHaveNoInteractions();
+    then(applicationEventPublisher).shouldHaveNoInteractions();
   }
 
   @DisplayName("존재하지 않는 유저 제출 404 예외 테스트")
@@ -119,6 +120,7 @@ public class SubmissionServiceTest {
 
     UUID userId = UUID.randomUUID();
     UUID projectId = UUID.randomUUID();
+    UUID submissionId = UUID.randomUUID();
     String repoUrl = "http://gitbub,com/vvineey/example";
 
     // 프로젝트, 유저 존재
@@ -129,6 +131,11 @@ public class SubmissionServiceTest {
             submissionRepository.existsByUserIdAndProjectIdAndStatusIn(
                 eq(userId), eq(projectId), any()))
         .willReturn(false);
+
+    // 제출된 submission
+    Submission mockSubmission = mock(Submission.class);
+    given(submissionRepository.save(any(Submission.class))).willReturn(mockSubmission);
+    given(mockSubmission.getId()).willReturn(submissionId);
 
     submissionService.submit(userId, projectId, repoUrl);
 

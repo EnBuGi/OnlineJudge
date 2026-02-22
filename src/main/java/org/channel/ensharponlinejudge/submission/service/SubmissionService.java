@@ -9,7 +9,8 @@ import org.channel.ensharponlinejudge.project.domain.Project;
 import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
 import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
-import org.channel.ensharponlinejudge.submission.infra.queue.SubmissionQueuedEvent;
+import org.channel.ensharponlinejudge.submission.infra.queue.dto.SubmissionJudgeRequest;
+import org.channel.ensharponlinejudge.submission.infra.queue.dto.SubmissionQueueEvent;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
 import org.channel.ensharponlinejudge.user.domain.User;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
@@ -30,7 +31,7 @@ public class SubmissionService {
   public UUID submit(UUID userId, UUID projectId, String repoUrl) {
 
     List<SubmissionStatus> inProgress =
-        List.of(SubmissionStatus.QUEUED, SubmissionStatus.PROCESSING);
+        List.of(SubmissionStatus.ENQUEUING, SubmissionStatus.QUEUED, SubmissionStatus.PROCESSING);
 
     Project project =
         projectRepository
@@ -49,7 +50,8 @@ public class SubmissionService {
     Submission submission = Submission.initialize(userId, projectId, repoUrl);
     Submission savedSubmission = submissionRepository.save(submission);
 
-    applicationEventPublisher.publishEvent(new SubmissionQueuedEvent(savedSubmission.getId()));
+    //내부 이벤트 발행
+    applicationEventPublisher.publishEvent(new SubmissionQueueEvent(savedSubmission.getId()));
 
     return savedSubmission.getId();
   }

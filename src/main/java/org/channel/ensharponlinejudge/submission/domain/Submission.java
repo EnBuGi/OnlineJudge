@@ -56,11 +56,15 @@ public class Submission {
     this.userId = userId;
     this.projectId = projectId;
     this.repoUrl = repoUrl;
-    this.status = SubmissionStatus.QUEUED;
+    this.status = SubmissionStatus.ENQUEUING;
   }
 
   public static Submission initialize(UUID userId, UUID projectId, String repoUrl) {
 
     return Submission.builder().userId(userId).projectId(projectId).repoUrl(repoUrl).build();
+  }
+
+  public void markQueued(){
+    this.status = SubmissionStatus.QUEUED;
   }
 }

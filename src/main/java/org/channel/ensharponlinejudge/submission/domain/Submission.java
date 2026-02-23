@@ -67,4 +67,8 @@ public class Submission {
   public void markQueued(){
     this.status = SubmissionStatus.QUEUED;
   }
+
+  public void markSystemError(){
+    this.status = SubmissionStatus.SYSTEM_ERROR;
+  }
 }

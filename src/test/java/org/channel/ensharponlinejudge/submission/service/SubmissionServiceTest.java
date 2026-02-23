@@ -16,7 +16,7 @@ import org.channel.ensharponlinejudge.project.domain.Project;
 import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
 import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
-import org.channel.ensharponlinejudge.submission.infra.queue.SubmissionQueuedEvent;
+import org.channel.ensharponlinejudge.submission.infra.queue.dto.SubmissionCreatedEvent;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
 import org.channel.ensharponlinejudge.user.domain.User;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
@@ -169,13 +169,14 @@ public class SubmissionServiceTest {
 
     Submission mockSubmission = mock(Submission.class);
 
-    // 제출 리포지토리 저장 -> 반환된 id가 submissionId 이어야 겠죠 ..?
     given(submissionRepository.save(any())).willReturn(mockSubmission);
     given(mockSubmission.getId()).willReturn(submisssionId);
 
     submissionService.submit(userid, projectId, repoUrl);
 
-    then(applicationEventPublisher).should().publishEvent(new SubmissionQueuedEvent(submisssionId));
+    then(applicationEventPublisher)
+        .should()
+        .publishEvent(new SubmissionCreatedEvent(submisssionId));
   }
 
   // 프로젝트 존재 기본 전제

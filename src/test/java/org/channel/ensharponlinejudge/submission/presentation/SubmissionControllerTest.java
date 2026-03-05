@@ -49,7 +49,7 @@ public class SubmissionControllerTest {
 
   @Test
   @DisplayName("repoUrl이 올바르면 200을 반환한다")
-  void Given_repoUrl이_올바른Url인데_When제출을_요청하면_Expect200을반환한다() throws Exception {
+  void Given_repoUrl이_올바른Url인데_When제출을_요청하면_Expect201을반환한다() throws Exception {
 
     UUID userId = UUID.randomUUID();
     UUID projectId = UUID.randomUUID();
@@ -62,7 +62,7 @@ public class SubmissionControllerTest {
             post("/api/submissions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(submitRequest)))
-        .andExpect(status().isOk());
+        .andExpect(status().isCreated());
 
     then(submissionService).should().submit(userId, projectId, submitRequest.repoUrl());
   }

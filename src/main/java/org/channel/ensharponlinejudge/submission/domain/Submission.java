@@ -25,12 +25,12 @@ public class Submission {
   @JdbcTypeCode(SqlTypes.VARCHAR)
   private UUID id;
 
-  @JoinColumn(name = "user_id", nullable = false)
-  @JdbcTypeCode(SqlTypes.VARCHAR)
+  `@Column`(name = "user_id", nullable = false)
+  `@JdbcTypeCode`(SqlTypes.VARCHAR)
   private UUID userId;
 
-  @JoinColumn(name = "project_id", nullable = false)
-  @JdbcTypeCode(SqlTypes.VARCHAR)
+  `@Column`(name = "project_id", nullable = false)
+  `@JdbcTypeCode`(SqlTypes.VARCHAR)
   private UUID projectId;
 
   @Column(name = "repo_url", length = 255, nullable = false)

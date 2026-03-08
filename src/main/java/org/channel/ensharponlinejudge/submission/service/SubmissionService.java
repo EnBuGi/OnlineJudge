@@ -27,6 +27,7 @@ public class SubmissionService {
     private final SubmissionRepository submissionRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
 
+    `@Transactional`
     public UUID submit(UUID userId, UUID projectId, String repoUrl) {
 
         List<SubmissionStatus> inProgress =

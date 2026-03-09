@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum SubmissionErrorCode implements ErrorCode {
 
-  SUBMISSON_NOT_FOUND("해당 제출을 찾을 수 없습니다.",HttpStatus.NOT_FOUND),
+  SUBMISSION_NOT_FOUND("해당 제출을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
   PROJECT_NOT_FOUND("해당 프로젝트를 찾을 수 없습니다", HttpStatus.NOT_FOUND),
 

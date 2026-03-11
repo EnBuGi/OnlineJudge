@@ -25,12 +25,12 @@ public class Submission {
   @JdbcTypeCode(SqlTypes.VARCHAR)
   private UUID id;
 
-  `@Column`(name = "user_id", nullable = false)
-  `@JdbcTypeCode`(SqlTypes.VARCHAR)
+  @Column(name = "user_id", nullable = false)
+  @JdbcTypeCode(SqlTypes.VARCHAR)
   private UUID userId;
 
-  `@Column`(name = "project_id", nullable = false)
-  `@JdbcTypeCode`(SqlTypes.VARCHAR)
+  @Column(name = "project_id", nullable = false)
+  @JdbcTypeCode(SqlTypes.VARCHAR)
   private UUID projectId;
 
   @Column(name = "repo_url", length = 255, nullable = false)
@@ -64,11 +64,11 @@ public class Submission {
     return Submission.builder().userId(userId).projectId(projectId).repoUrl(repoUrl).build();
   }
 
-  public void markQueued(){
+  public void markQueued() {
     this.status = SubmissionStatus.QUEUED;
   }
 
-  public void markSystemError(){
+  public void markSystemError() {
     this.status = SubmissionStatus.SYSTEM_ERROR;
   }
 }

@@ -7,7 +7,7 @@ public record SubmissionJudgeRequest(
         UUID userId,
         UUID projectId,
         String repoUrl,
-        String testCodeGetUrl,
+        String testCodeUrl,
         int timeLimit,
         int memoryLimit
 ) {}

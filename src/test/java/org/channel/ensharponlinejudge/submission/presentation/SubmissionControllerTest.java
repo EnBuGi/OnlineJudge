@@ -35,11 +35,12 @@ public class SubmissionControllerTest {
     UUID userId = UUID.randomUUID();
     UUID projectId = UUID.randomUUID();
 
-    SubmitRequest submitRequest = new SubmitRequest(userId, projectId, "http://naver.com/test/ex");
+    SubmitRequest submitRequest = new SubmitRequest("http://naver.com/test/ex");
 
     mockMvc
         .perform(
-            post("/api/submissions")
+            post("/api/v1/projects/" + projectId + "/submissions")
+                .param("userId", userId.toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writer().writeValueAsString(submitRequest)))
         .andExpect(status().isBadRequest());
@@ -54,12 +55,12 @@ public class SubmissionControllerTest {
     UUID userId = UUID.randomUUID();
     UUID projectId = UUID.randomUUID();
 
-    SubmitRequest submitRequest =
-        new SubmitRequest(userId, projectId, "https://github.com/vvineey/example");
+    SubmitRequest submitRequest = new SubmitRequest("https://github.com/vvineey/example");
 
     mockMvc
         .perform(
-            post("/api/submissions")
+            post("/api/v1/projects/" + projectId + "/submissions")
+                .param("userId", userId.toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(submitRequest)))
         .andExpect(status().isCreated());

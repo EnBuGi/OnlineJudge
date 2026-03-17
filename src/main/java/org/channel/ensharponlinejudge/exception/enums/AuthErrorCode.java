@@ -12,6 +12,12 @@ public enum AuthErrorCode implements ErrorCode {
 
   INVALID_TOKEN("유효하지 않은 토큰입니다.", HttpStatus.UNAUTHORIZED),
 
+  INVALID_INVITE_TOKEN("유효하지 않거나 만료된 초대 토큰입니다.", HttpStatus.BAD_REQUEST),
+
+  GENERATION_MISMATCH("역할에 맞지 않는 기수입니다.", HttpStatus.BAD_REQUEST),
+
+  GITHUB_AUTH_FAILED("GitHub 인증에 실패했습니다.", HttpStatus.BAD_GATEWAY),
+
   TOKEN_USER_MISMATCH("토큰의 유저 정보가 일치하지 않습니다.", HttpStatus.UNAUTHORIZED),
 
   LOGIN_FAILED("로그인에 실패했습니다.", HttpStatus.UNAUTHORIZED),

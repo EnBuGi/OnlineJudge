@@ -1,11 +1,10 @@
 package org.channel.ensharponlinejudge.auth.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 
-import org.channel.ensharponlinejudge.auth.controller.requests.LoginRequest;
-import org.channel.ensharponlinejudge.auth.controller.requests.SignupRequest;
-import org.channel.ensharponlinejudge.auth.controller.requests.WithdrawRequest;
+import org.channel.ensharponlinejudge.auth.controller.requests.GithubLoginRequest;
+import org.channel.ensharponlinejudge.auth.controller.requests.GithubSignupRequest;
+import org.channel.ensharponlinejudge.auth.controller.responses.GithubLoginInfoResponse;
 import org.channel.ensharponlinejudge.auth.service.AuthService;
 import org.channel.ensharponlinejudge.auth.service.dtos.AccessTokenResponse;
 import org.channel.ensharponlinejudge.auth.service.dtos.TokenDto;
@@ -44,20 +43,30 @@ public class AuthController {
   @Value("${jwt.cookie.path:/}")
   private String refreshTokenCookiePath;
 
-  @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다.")
-  @PostMapping("/members")
-  public ResponseEntity<String> signup(@Valid @RequestBody SignupRequest request) {
-    authService.signup(request);
-    return ResponseEntity.status(HttpStatus.CREATED).body("회원가입 성공");
+  @Operation(summary = "GitHub 로그인", description = "GitHub Code를 받아 로그인 또는 회원가입 필요 정보를 응답합니다.")
+  @PostMapping("/auth/login/github")
+  public ResponseEntity<?> loginGithub(
+      @RequestBody GithubLoginRequest request, HttpServletResponse response) {
+    Object result = authService.loginGithub(request);
+
+    if (result instanceof GithubLoginInfoResponse) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
+    } else {
+      TokenDto tokenDto = (TokenDto) result;
+      ResponseCookie cookie =
+          setRefreshTokenCookie(
+              tokenDto.refreshToken(),
+              refreshTokenMaxAgeSeconds > 0 ? refreshTokenMaxAgeSeconds : 1209600);
+      response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+      return ResponseEntity.ok(AccessTokenResponse.from(tokenDto.accessToken()));
+    }
   }
 
-  @Operation(
-      summary = "로그인",
-      description = "사용자 로그인 후 Access Token과 Refresh Token을 발급합니다. Refresh Token은 쿠키에 저장됩니다.")
-  @PostMapping("/auth/token")
-  public ResponseEntity<AccessTokenResponse> login(
-      @Valid @RequestBody LoginRequest request, HttpServletResponse response) {
-    TokenDto tokenDto = authService.login(request);
+  @Operation(summary = "GitHub 추가정보 기입 회원가입", description = "추가 정보를 입력받고 가입을 진행합니다.")
+  @PostMapping("/auth/signup/github")
+  public ResponseEntity<AccessTokenResponse> signupGithub(
+      @RequestBody GithubSignupRequest request, HttpServletResponse response) {
+    TokenDto tokenDto = authService.signupGithub(request);
 
     ResponseCookie cookie =
         setRefreshTokenCookie(
@@ -65,7 +74,8 @@ public class AuthController {
             refreshTokenMaxAgeSeconds > 0 ? refreshTokenMaxAgeSeconds : 1209600);
     response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-    return ResponseEntity.ok(AccessTokenResponse.from(tokenDto.accessToken()));
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(AccessTokenResponse.from(tokenDto.accessToken()));
   }
 
   @Operation(
@@ -105,22 +115,6 @@ public class AuthController {
     response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
     return ResponseEntity.ok(AccessTokenResponse.from(tokenDto.accessToken()));
-  }
-
-  @Operation(
-      summary = "회원 탈퇴",
-      description = "회원 탈퇴를 처리합니다. 비밀번호 확인 후 회원은 삭제 상태로 변경되며, 관련 토큰은 만료됩니다.")
-  @DeleteMapping("/members")
-  public ResponseEntity<String> withdraw(
-      @Parameter(hidden = true) @RequestHeader("Authorization") String accessToken,
-      @Valid @RequestBody WithdrawRequest request,
-      HttpServletResponse response) {
-    authService.withdraw(resolveToken(accessToken), request.password());
-
-    ResponseCookie cookie = setRefreshTokenCookie("", 0);
-    response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-
-    return ResponseEntity.ok("회원 탈퇴 성공");
   }
 
   private String resolveToken(String authorizationHeader) {

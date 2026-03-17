@@ -1,18 +1,23 @@
 package org.channel.ensharponlinejudge.auth.service;
 
-import org.channel.ensharponlinejudge.auth.controller.requests.LoginRequest;
-import org.channel.ensharponlinejudge.auth.controller.requests.SignupRequest;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.channel.ensharponlinejudge.auth.controller.requests.GithubLoginRequest;
+import org.channel.ensharponlinejudge.auth.controller.requests.GithubSignupRequest;
+import org.channel.ensharponlinejudge.auth.controller.responses.GithubLoginInfoResponse;
+import org.channel.ensharponlinejudge.auth.infra.github.GithubOAuthClient;
 import org.channel.ensharponlinejudge.auth.service.dtos.TokenDto;
 import org.channel.ensharponlinejudge.auth.service.store.TokenStore;
-import org.channel.ensharponlinejudge.user.domain.User;
-import org.channel.ensharponlinejudge.user.repository.UserRepository;
 import org.channel.ensharponlinejudge.exception.BusinessException;
 import org.channel.ensharponlinejudge.exception.enums.AuthErrorCode;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.security.authentication.AuthenticationManager;
+import org.channel.ensharponlinejudge.user.domain.Role;
+import org.channel.ensharponlinejudge.user.domain.User;
+import org.channel.ensharponlinejudge.user.repository.UserRepository;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,34 +28,64 @@ import lombok.RequiredArgsConstructor;
 public class AuthService {
 
   private final UserRepository memberRepository;
-  private final PasswordEncoder passwordEncoder;
-  private final AuthenticationManager authenticationManager;
   private final JwtTokenProvider jwtTokenProvider;
   private final TokenStore tokenStore;
+  private final GithubOAuthClient githubOAuthClient;
+  private final InviteService inviteService;
 
   @Transactional
-  public void signup(SignupRequest request) {
-    if (memberRepository.existsByEmail(request.email())) {
-      throw new BusinessException(AuthErrorCode.USER_ALREADY_EXISTS);
-    }
-    User member = User.initialize(request.email(), passwordEncoder.encode(request.password()));
-    try {
-      memberRepository.save(member);
-      memberRepository.flush();
-    } catch (DataIntegrityViolationException e) {
-      throw new BusinessException(AuthErrorCode.USER_ALREADY_EXISTS);
+  public Object loginGithub(GithubLoginRequest request) {
+    String accessToken = githubOAuthClient.getAccessToken(request.getCode());
+    Map<String, Object> userInfo = githubOAuthClient.getUserInfo(accessToken);
+    String githubId = String.valueOf(userInfo.get("id")); // id is unique and numeric.
+    String profileImageUrl = (String) userInfo.get("avatar_url");
+
+    Optional<User> userOpt = memberRepository.findByGithubId(githubId);
+    if (userOpt.isPresent()) {
+      User user = userOpt.get();
+      Authentication authentication =
+          new UsernamePasswordAuthenticationToken(
+              user.getGithubId(), null, List.of(new SimpleGrantedAuthority(user.getRole().name())));
+      return issueTokens(authentication);
+    } else {
+      return new GithubLoginInfoResponse("회원가입이 필요합니다.", githubId, profileImageUrl);
     }
   }
 
-  public TokenDto login(LoginRequest request) {
-    // 1. Email/PW 기반 Authentication 객체 생성
-    UsernamePasswordAuthenticationToken authenticationToken =
-        new UsernamePasswordAuthenticationToken(request.email(), request.password());
+  @Transactional
+  public TokenDto signupGithub(GithubSignupRequest request) {
+    if (memberRepository.existsByGithubId(request.getGithubId())) {
+      throw new BusinessException(AuthErrorCode.USER_ALREADY_EXISTS);
+    }
 
-    // 2. 검증 (사용자 비밀번호 체크)
-    Authentication authentication = authenticationManager.authenticate(authenticationToken);
+    Role role = inviteService.validateToken(request.getInviteToken());
 
-    // 3. 토큰 발급 및 저장 (공통 로직 분리)
+    int currentGeneration = inviteService.getCurrentGeneration();
+    if (role == Role.MENTEE && request.getGeneration() != currentGeneration) {
+      throw new BusinessException(AuthErrorCode.GENERATION_MISMATCH);
+    }
+    if (role == Role.MENTOR && request.getGeneration() == currentGeneration) {
+      throw new BusinessException(AuthErrorCode.GENERATION_MISMATCH);
+    }
+
+    User user =
+        User.builder()
+            .githubId(request.getGithubId())
+            .name(request.getName())
+            .generation(request.getGeneration())
+            .role(role)
+            .profileImageUrl(request.getProfileImageUrl())
+            .isDeleted(false)
+            .build();
+
+    memberRepository.save(user);
+
+    // After signup, remove the invite token
+    inviteService.removeInviteToken(request.getInviteToken());
+
+    Authentication authentication =
+        new UsernamePasswordAuthenticationToken(
+            user.getGithubId(), null, List.of(new SimpleGrantedAuthority(user.getRole().name())));
     return issueTokens(authentication);
   }
 
@@ -94,34 +129,8 @@ public class AuthService {
     return issueTokens(authentication);
   }
 
-  @Transactional
-  public void withdraw(String accessToken, String password) {
-    // 1. Access Token 검증 및 Authentication 조회
-    if (!jwtTokenProvider.validateToken(accessToken)) {
-      throw new BusinessException(AuthErrorCode.INVALID_TOKEN);
-    }
-    Authentication authentication = jwtTokenProvider.getAuthentication(accessToken);
-
-    // 2. 사용자 조회
-    User member =
-        memberRepository
-            .findByEmail(authentication.getName())
-            .orElseThrow(() -> new BusinessException(AuthErrorCode.USER_NOT_FOUND));
-
-    // 3. 비밀번호 확인
-    if (!passwordEncoder.matches(password, member.getPassword())) {
-      throw new BusinessException(AuthErrorCode.PASSWORD_MISMATCH);
-    }
-
-    // 4. 회원 탈퇴 (Soft Delete)
-    memberRepository.delete(member);
-
-    // 5. 로그아웃 처리 (토큰 무효화)
-    logout(accessToken);
-  }
-
   // 토큰 생성 및 저장 로직 추출 (Login, Reissue 공통 사용)
-  private TokenDto issueTokens(Authentication authentication) {
+  public TokenDto issueTokens(Authentication authentication) {
     String accessToken = jwtTokenProvider.createAccessToken(authentication);
     String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
 

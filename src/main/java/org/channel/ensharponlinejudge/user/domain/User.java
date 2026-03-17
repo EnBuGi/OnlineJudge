@@ -3,6 +3,7 @@ package org.channel.ensharponlinejudge.user.domain;
 import java.util.UUID;
 
 import jakarta.persistence.*;
+
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -14,8 +15,7 @@ import lombok.*;
 @Table(name = "users")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SQLDelete(
-    sql = "UPDATE users SET is_deleted = true, email = CONCAT(email, '-del-', id) WHERE id = ?")
+@SQLDelete(sql = "UPDATE users SET is_deleted = true WHERE id = ?")
 @SQLRestriction("is_deleted = false")
 public class User {
 
@@ -33,7 +33,6 @@ public class User {
   @Column(nullable = false)
   private int generation;
 
-  @ElementCollection
   @Enumerated(EnumType.STRING)
   private Role role;
 
@@ -43,17 +42,15 @@ public class User {
   @Column(nullable = false)
   private boolean isDeleted = false;
 
-
   @Builder
   private User(
-          UUID id,
-          String githubId,
-          String name,
-          int generation,
-          Role role,
-          String profileImageUrl,
-          boolean isDeleted
-  ) {
+      UUID id,
+      String githubId,
+      String name,
+      int generation,
+      Role role,
+      String profileImageUrl,
+      boolean isDeleted) {
     this.id = id;
     this.githubId = githubId;
     this.name = name;
@@ -64,18 +61,14 @@ public class User {
   }
 
   public static User initialize(
-          String githubId,
-          String name,
-          int generation,
-          String profileImageUrl
-  ) {
+      String githubId, String name, int generation, String profileImageUrl) {
     return User.builder()
-            .githubId(githubId)
-            .name(name)
-            .generation(generation)
-            .role(Role.MENTEE)
-            .profileImageUrl(profileImageUrl)
-            .isDeleted(false)
-            .build();
+        .githubId(githubId)
+        .name(name)
+        .generation(generation)
+        .role(Role.MENTEE)
+        .profileImageUrl(profileImageUrl)
+        .isDeleted(false)
+        .build();
   }
 }

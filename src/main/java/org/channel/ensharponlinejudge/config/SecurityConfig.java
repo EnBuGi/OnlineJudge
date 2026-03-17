@@ -50,12 +50,12 @@ public class SecurityConfig {
 
   @Bean
   public AuthenticationManager authenticationManager(
-      AuthenticationConfiguration authenticationConfiguration) {
+      AuthenticationConfiguration authenticationConfiguration) throws Exception {
     return authenticationConfiguration.getAuthenticationManager();
   }
 
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http) {
+  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .csrf(AbstractHttpConfigurer::disable) // JWT 사용 시 CSRF 비활성화 (Access Token이 헤더에 들어가므로)
         .httpBasic(AbstractHttpConfigurer::disable)

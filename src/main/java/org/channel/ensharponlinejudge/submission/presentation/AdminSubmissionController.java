@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.AdminGlobalSubmissionResponse;
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.AdminProjectSubmissionSummaryResponse;
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.AdminSubmissionDetailResponse;
+import org.channel.ensharponlinejudge.submission.presentation.dto.response.AdminUserProjectSubmissionResponse;
 import org.channel.ensharponlinejudge.submission.service.AdminSubmissionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -39,5 +40,11 @@ public class AdminSubmissionController {
   public ResponseEntity<AdminSubmissionDetailResponse> getSubmissionDetail(
       @PathVariable("submissionId") UUID submissionId) {
     return ResponseEntity.ok(adminSubmissionService.getAdminSubmissionDetail(submissionId));
+  }
+
+  @GetMapping("/projects/{projectId}/users/{userId}/submissions")
+  public ResponseEntity<List<AdminUserProjectSubmissionResponse>> getUserProjectSubmissions(
+      @PathVariable("projectId") UUID projectId, @PathVariable("userId") UUID userId) {
+    return ResponseEntity.ok(adminSubmissionService.getUserProjectSubmissions(projectId, userId));
   }
 }

@@ -22,16 +22,16 @@ public class AdminUserService {
             ? userRepository.findAll()
             : userRepository.findByGeneration(generation))
         .stream()
-        .map(
-            user ->
-                AdminUserResponse.builder()
-                    .id(user.getId())
-                    .name(user.getName())
-                    .githubId(user.getGithubId())
-                    .role(user.getRole())
-                    .generation(user.getGeneration())
-                    .profileImageUrl(user.getProfileImageUrl())
-                    .build())
-        .collect(Collectors.toList());
+            .map(
+                user ->
+                    AdminUserResponse.builder()
+                        .id(user.getId())
+                        .name(user.getName())
+                        .githubId(user.getGithubId())
+                        .role(user.getRole())
+                        .generation(user.getGeneration())
+                        .profileImageUrl(user.getProfileImageUrl())
+                        .build())
+            .collect(Collectors.toList());
   }
 }

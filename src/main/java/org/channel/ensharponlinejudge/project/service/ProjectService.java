@@ -290,7 +290,7 @@ public class ProjectService {
         .skeletonUrl(project.getSkeletonUrl())
         // Mentee response explicitly excludes testCodeUrl
         .scorePolicy(scorePolicy)
-            .build();
+        .build();
   }
 
   public TestCodeParseResponse parseTestCode(MultipartFile file) {

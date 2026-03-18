@@ -2,6 +2,7 @@ package org.channel.ensharponlinejudge.submission.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -15,6 +16,7 @@ import org.channel.ensharponlinejudge.submission.domain.SubmissionResultDetail;
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.AdminGlobalSubmissionResponse;
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.AdminProjectSubmissionSummaryResponse;
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.AdminSubmissionDetailResponse;
+import org.channel.ensharponlinejudge.submission.presentation.dto.response.AdminUserProjectSubmissionResponse;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionResultDetailRepository;
 import org.channel.ensharponlinejudge.user.domain.User;
@@ -63,7 +65,7 @@ public class AdminSubmissionService {
                   .name(user.getName())
                   .githubId(user.getGithubId())
                   .status(latest != null ? latest.getStatus() : null)
-                  .score(latest != null ? latest.getScore() : 0)
+                  .score(latest != null ? latest.getScore() : null)
                   .lastSubmittedAt(latest != null ? latest.getSubmittedAt() : null)
                   .build();
             })
@@ -73,11 +75,21 @@ public class AdminSubmissionService {
   public List<AdminGlobalSubmissionResponse> getGlobalSubmissions() {
     List<Submission> submissions = submissionRepository.findAllByOrderBySubmittedAtDesc();
 
+    Set<UUID> userIds = submissions.stream().map(Submission::getUserId).collect(Collectors.toSet());
+    Set<UUID> projectIds =
+        submissions.stream().map(Submission::getProjectId).collect(Collectors.toSet());
+
+    Map<UUID, User> userMap =
+        userRepository.findAllById(userIds).stream().collect(Collectors.toMap(User::getId, u -> u));
+    Map<UUID, Project> projectMap =
+        projectRepository.findAllById(projectIds).stream()
+            .collect(Collectors.toMap(Project::getId, p -> p));
+
     return submissions.stream()
         .map(
             s -> {
-              User user = userRepository.findById(s.getUserId()).orElse(null);
-              Project project = projectRepository.findById(s.getProjectId()).orElse(null);
+              User user = userMap.get(s.getUserId());
+              Project project = projectMap.get(s.getProjectId());
 
               return AdminGlobalSubmissionResponse.builder()
                   .submissionId(s.getId())
@@ -99,6 +111,11 @@ public class AdminSubmissionService {
             .findById(submissionId)
             .orElseThrow(() -> new BusinessException(SubmissionErrorCode.SUBMISSION_NOT_FOUND));
 
+    User user =
+        userRepository
+            .findById(submission.getUserId())
+            .orElseThrow(() -> new BusinessException(SubmissionErrorCode.USER_NOT_FOUND));
+
     List<SubmissionResultDetail> details =
         submissionResultDetailRepository.findBySubmissionId(submissionId);
 
@@ -118,11 +135,36 @@ public class AdminSubmissionService {
 
     return AdminSubmissionDetailResponse.builder()
         .submissionId(submission.getId())
+        .userName(user.getName())
+        .githubId(user.getGithubId())
         .repoUrl(submission.getRepoUrl())
         .status(submission.getStatus())
         .score(submission.getScore())
+        .memoryUsage(submission.getMemoryUsage())
+        .timeExecution(submission.getTimeUsage())
         .submittedAt(submission.getSubmittedAt())
+        .sourceCode("") // Still need to find where source code is stored
         .testDetails(testDetails)
         .build();
+  }
+
+  public List<AdminUserProjectSubmissionResponse> getUserProjectSubmissions(
+      UUID projectId, UUID userId) {
+    List<Submission> submissions =
+        submissionRepository.findByUserIdAndProjectIdOrderBySubmittedAtDesc(userId, projectId);
+
+    return submissions.stream()
+        .map(
+            s ->
+                AdminUserProjectSubmissionResponse.builder()
+                    .submissionId(s.getId())
+                    .status(s.getStatus())
+                    .score(s.getScore())
+                    .memoryUsage(s.getMemoryUsage())
+                    .timeExecution(s.getTimeUsage())
+                    .language("Java")
+                    .submittedAt(s.getSubmittedAt())
+                    .build())
+        .collect(Collectors.toList());
   }
 }

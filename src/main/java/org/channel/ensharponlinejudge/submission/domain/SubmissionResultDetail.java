@@ -4,6 +4,8 @@ import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -32,33 +34,34 @@ public class SubmissionResultDetail {
   @JdbcTypeCode(SqlTypes.VARCHAR)
   private UUID submissionId;
 
-  @Column(name = "method_name", nullable = false)
+  @Column(name = "method_name", nullable = false, length = 100)
   private String methodName;
 
-  @Column(name = "status", nullable = false, length = 30)
-  private String status;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  private SubmissionStatus status;
 
   @Column(name = "duration_ms")
-  private Long durationMs;
+  private int durationMs;
 
-  @Column(name = "message", columnDefinition = "TEXT")
+  @Column(length = 2000)
   private String message;
 
   @Column(name = "is_hidden", nullable = false)
   private boolean isHidden;
 
-  @Column(name = "score")
-  private Integer score;
+  @Column(nullable = false)
+  private int score;
 
   @Builder
   public SubmissionResultDetail(
       UUID submissionId,
       String methodName,
-      String status,
-      Long durationMs,
+      SubmissionStatus status,
+      int durationMs,
       String message,
       boolean isHidden,
-      Integer score) {
+      int score) {
     this.submissionId = submissionId;
     this.methodName = methodName;
     this.status = status;

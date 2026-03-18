@@ -38,6 +38,16 @@ public class GlobalExceptionHandler {
     return new ResponseEntity<>(response, errorCode.getStatus());
   }
 
+  @ExceptionHandler(IllegalArgumentException.class)
+  protected ResponseEntity<ErrorResponse> handleIllegalArgumentException(
+      IllegalArgumentException e) {
+    log.warn("Invalid argument: {}", e.getMessage());
+    ErrorCode errorCode = CommonErrorCode.INVALID_INPUT_VALUE;
+    ErrorResponse response =
+        new ErrorResponse(errorCode.getStatus().value(), errorCode.name(), e.getMessage());
+    return new ResponseEntity<>(response, errorCode.getStatus());
+  }
+
   @ExceptionHandler(Exception.class)
   protected ResponseEntity<ErrorResponse> handleException(Exception e) {
     log.error("Internal Server Error occurred", e);

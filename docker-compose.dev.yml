@@ -1,0 +1,60 @@
+# Dev 환경 — develop 브랜치 배포 대상
+services:
+  mysql-dev:
+    image: mysql:8.0
+    container_name: mysql-dev
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DEV_DB_PASSWORD}
+      MYSQL_DATABASE: ensharp_oj_dev
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+    networks:
+      - shared
+      - dev
+
+  api-dev:
+    image: ${DOCKER_IMAGE}:dev-${IMAGE_TAG}
+    container_name: api-dev
+    restart: unless-stopped
+    depends_on:
+      - mysql-dev
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:mysql://mysql-dev:3306/ensharp_oj_dev?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+      DB_USERNAME: root
+      DB_PASSWORD: ${DEV_DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      JWT_SECRET: ${DEV_JWT_SECRET}
+      GITHUB_CLIENT_ID: ${DEV_GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${DEV_GITHUB_CLIENT_SECRET}
+      ALLOWED_ORIGIN: ${DEV_ALLOWED_ORIGIN}
+      OCI_TENANT_ID: ${OCI_TENANT_ID}
+      OCI_USER_ID: ${OCI_USER_ID}
+      OCI_FINGERPRINT: ${OCI_FINGERPRINT}
+      OCI_PRIVATE_KEY_PATH: /app/secrets/oci_key.pem
+      OCI_REGION: ${OCI_REGION}
+      OCI_NAMESPACE: ${OCI_NAMESPACE}
+      OCI_TEST_CODE_BUCKET_NAME: ${OCI_TEST_CODE_BUCKET_NAME}
+    ports:
+      - "8080:8080"
+    volumes:
+      - /opt/ensharpOJ/secrets:/app/secrets:ro
+    networks:
+      - shared
+      - dev
+
+volumes:
+  mysql_dev_data:
+
+networks:
+  shared:
+    name: ensharpOJ_shared
+    external: true
+  dev:
+    name: ensharpOJ_dev
+    driver: bridge

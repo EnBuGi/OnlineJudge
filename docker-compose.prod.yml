@@ -1,0 +1,60 @@
+# Prod 환경 — main 브랜치 배포 대상
+services:
+  mysql-prod:
+    image: mysql:8.0
+    container_name: mysql-prod
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${PROD_DB_PASSWORD}
+      MYSQL_DATABASE: ensharp_oj
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_prod_data:/var/lib/mysql
+    networks:
+      - shared
+      - prod
+
+  api-prod:
+    image: ${DOCKER_IMAGE}:prod-${IMAGE_TAG}
+    container_name: api-prod
+    restart: unless-stopped
+    depends_on:
+      - mysql-prod
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:mysql://mysql-prod:3306/ensharp_oj?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+      DB_USERNAME: root
+      DB_PASSWORD: ${PROD_DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      JWT_SECRET: ${PROD_JWT_SECRET}
+      GITHUB_CLIENT_ID: ${PROD_GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${PROD_GITHUB_CLIENT_SECRET}
+      ALLOWED_ORIGIN: ${PROD_ALLOWED_ORIGIN}
+      OCI_TENANT_ID: ${OCI_TENANT_ID}
+      OCI_USER_ID: ${OCI_USER_ID}
+      OCI_FINGERPRINT: ${OCI_FINGERPRINT}
+      OCI_PRIVATE_KEY_PATH: /app/secrets/oci_key.pem
+      OCI_REGION: ${OCI_REGION}
+      OCI_NAMESPACE: ${OCI_NAMESPACE}
+      OCI_TEST_CODE_BUCKET_NAME: ${OCI_TEST_CODE_BUCKET_NAME}
+    ports:
+      - "8081:8080"
+    volumes:
+      - /opt/ensharpOJ/secrets:/app/secrets:ro
+    networks:
+      - shared
+      - prod
+
+volumes:
+  mysql_prod_data:
+
+networks:
+  shared:
+    name: ensharpOJ_shared
+    external: true
+  prod:
+    name: ensharpOJ_prod
+    driver: bridge

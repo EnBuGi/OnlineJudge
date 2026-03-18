@@ -134,4 +134,9 @@ public class Project {
     this.timeLimit = timeLimit;
     this.memoryLimit = memoryLimit;
   }
+
+  /** OCI 오브젝트 스토리지에 업로드된 테스트 코드의 PAR URL을 저장합니다. */
+  public void updateTestCodeUrl(String testCodeUrl) {
+    this.testCodeUrl = testCodeUrl;
+  }
 }

@@ -1,13 +1,18 @@
 package org.channel.ensharponlinejudge.project.service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.channel.ensharponlinejudge.exception.BusinessException;
 import org.channel.ensharponlinejudge.exception.enums.ProjectErrorCode;
 import org.channel.ensharponlinejudge.project.domain.Project;
 import org.channel.ensharponlinejudge.project.domain.ProjectTestCase;
+import org.channel.ensharponlinejudge.project.infra.storage.ObjectStorageService;
 import org.channel.ensharponlinejudge.project.presentation.dto.request.ProjectCreateRequest;
 import org.channel.ensharponlinejudge.project.presentation.dto.request.ProjectUpdateRequest;
 import org.channel.ensharponlinejudge.project.presentation.dto.request.ScorePolicyDto;
@@ -16,6 +21,8 @@ import org.channel.ensharponlinejudge.project.presentation.dto.response.AdminPro
 import org.channel.ensharponlinejudge.project.presentation.dto.response.AdminProjectListResponse;
 import org.channel.ensharponlinejudge.project.presentation.dto.response.MenteeProjectDetailResponse;
 import org.channel.ensharponlinejudge.project.presentation.dto.response.MenteeProjectListResponse;
+import org.channel.ensharponlinejudge.project.presentation.dto.response.TestCodeParseResponse;
+import org.channel.ensharponlinejudge.project.presentation.dto.response.TestCodeUploadResponse;
 import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
 import org.channel.ensharponlinejudge.project.repository.ProjectTestCaseRepository;
 import org.channel.ensharponlinejudge.user.domain.Role;
@@ -23,6 +30,7 @@ import org.channel.ensharponlinejudge.user.domain.User;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
 
@@ -32,6 +40,7 @@ public class ProjectService {
   private final ProjectRepository projectRepository;
   private final ProjectTestCaseRepository projectTestCaseRepository;
   private final UserRepository userRepository;
+  private final ObjectStorageService objectStorageService;
 
   @Transactional
   public UUID createProject(UUID userId, ProjectCreateRequest request) {
@@ -285,5 +294,60 @@ public class ProjectService {
         // Mentee response explicitly excludes testCodeUrl
         .scorePolicy(scorePolicy)
         .build();
+  }
+
+  public TestCodeParseResponse parseTestCode(MultipartFile file) {
+    List<String> methodNames = new ArrayList<>();
+    try (Scanner scanner = new Scanner(file.getInputStream())) {
+      StringBuilder content = new StringBuilder();
+      while (scanner.hasNextLine()) {
+        content.append(scanner.nextLine()).append("\n");
+      }
+
+      // JUnit @Test annotation regex
+      Pattern pattern = Pattern.compile("@Test\\s+(?:public\\s+)?void\\s+(\\w+)\\s*\\(");
+      Matcher matcher = pattern.matcher(content.toString());
+
+      while (matcher.find()) {
+        methodNames.add(matcher.group(1));
+      }
+    } catch (Exception e) {
+      throw new BusinessException(ProjectErrorCode.ERR_FILE_PARSE_FAILED);
+    }
+
+    return TestCodeParseResponse.builder().methodNames(methodNames).build();
+  }
+
+  /**
+   * 테스트 코드 .zip 파일을 OCI 오브젝트 스토리지에 업로드하고, 생성된 PAR URL을 프로젝트에 저장합니다. 업로드 전 .zip 파일 내 src/test 디렉토리
+   * 존재 여부를 검증합니다.
+   */
+  @Transactional
+  public TestCodeUploadResponse uploadTestCode(UUID userId, UUID projectId, MultipartFile file) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(ProjectErrorCode.ERR_FORBIDDEN));
+
+    if (user.getRole() != Role.MENTOR) {
+      throw new BusinessException(ProjectErrorCode.ERR_FORBIDDEN);
+    }
+
+    Project project =
+        projectRepository
+            .findById(projectId)
+            .orElseThrow(() -> new BusinessException(ProjectErrorCode.ERR_PROJECT_NOT_FOUND));
+
+    // OCI에 업로드 (내부에서 .zip 및 src/test 디렉토리 검증 수행)
+    String objectKey = projectId.toString() + "/test-code.zip";
+    objectStorageService.uploadTestCode(file, objectKey);
+
+    // PAR GET URL 생성
+    String testCodeUrl = objectStorageService.generateGetUrl(objectKey);
+
+    // 프로젝트에 testCodeUrl 저장
+    project.updateTestCodeUrl(testCodeUrl);
+
+    return TestCodeUploadResponse.builder().testCodeUrl(testCodeUrl).build();
   }
 }

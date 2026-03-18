@@ -1,5 +1,6 @@
 package org.channel.ensharponlinejudge.user.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -10,4 +11,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
   boolean existsByGithubId(String githubId);
 
   Optional<User> findByGithubId(String githubId);
+
+  List<User> findByGeneration(int generation);
 }

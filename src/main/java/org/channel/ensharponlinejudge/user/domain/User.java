@@ -15,9 +15,7 @@ import lombok.*;
 @Table(name = "users")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SQLDelete(
-    sql =
-        "UPDATE users SET is_deleted = true, github_id = CONCAT(github_id, '-del-', id) WHERE id = ?")
+@SQLDelete(sql = "UPDATE users SET is_deleted = true WHERE id = ?")
 @SQLRestriction("is_deleted = false")
 public class User {
 

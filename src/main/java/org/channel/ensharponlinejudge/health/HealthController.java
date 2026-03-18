@@ -23,7 +23,7 @@ public class HealthController {
   @Operation(
       summary = "서버 상태 확인",
       description = "서버와 데이터베이스의 헬스 체크를 수행합니다. 데이터베이스 연결 상태를 포함한 전체 시스템의 상태를 반환합니다.")
-  @GetMapping
+  @GetMapping("/health")
   public ResponseEntity<?> healthCheck() {
     try {
       Query query = entityManager.createNativeQuery("SELECT 1");

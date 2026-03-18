@@ -6,6 +6,7 @@ import java.util.UUID;
 import jakarta.validation.Valid;
 
 import org.channel.ensharponlinejudge.submission.presentation.dto.request.SubmitRequest;
+import org.channel.ensharponlinejudge.submission.presentation.dto.response.SubmissionDetailResponse;
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.SubmissionHistoryResponse;
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.SubmitResponse;
 import org.channel.ensharponlinejudge.submission.service.SubmissionService;
@@ -49,5 +50,29 @@ public class SubmissionController {
         submissionService.getSubmissionHistory(userId, projectId);
 
     return ResponseEntity.ok(history);
+  }
+
+  @GetMapping("/{submissionId}")
+  public ResponseEntity<SubmissionDetailResponse> getSubmissionDetail(
+      @PathVariable("projectId") UUID projectId,
+      @PathVariable("submissionId") UUID submissionId,
+      @AuthenticationPrincipal UserDetails userDetails) {
+
+    UUID userId = UUID.fromString(userDetails.getUsername());
+    SubmissionDetailResponse detail = submissionService.getSubmissionDetail(userId, submissionId);
+
+    return ResponseEntity.ok(detail);
+  }
+
+  @PostMapping("/{submissionId}/cancel")
+  public ResponseEntity<Void> cancelSubmission(
+      @PathVariable("projectId") UUID projectId,
+      @PathVariable("submissionId") UUID submissionId,
+      @AuthenticationPrincipal UserDetails userDetails) {
+
+    UUID userId = UUID.fromString(userDetails.getUsername());
+    submissionService.cancelSubmission(userId, submissionId);
+
+    return ResponseEntity.noContent().build();
   }
 }

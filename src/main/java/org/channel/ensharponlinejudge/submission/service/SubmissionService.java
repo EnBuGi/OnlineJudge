@@ -8,10 +8,13 @@ import org.channel.ensharponlinejudge.exception.BusinessException;
 import org.channel.ensharponlinejudge.exception.enums.SubmissionErrorCode;
 import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
 import org.channel.ensharponlinejudge.submission.domain.Submission;
+import org.channel.ensharponlinejudge.submission.domain.SubmissionResultDetail;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
 import org.channel.ensharponlinejudge.submission.infra.queue.dto.SubmissionCreatedEvent;
+import org.channel.ensharponlinejudge.submission.presentation.dto.response.SubmissionDetailResponse;
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.SubmissionHistoryResponse;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
+import org.channel.ensharponlinejudge.submission.repository.SubmissionResultDetailRepository;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,7 @@ public class SubmissionService {
   private final ProjectRepository projectRepository;
   private final UserRepository userRepository;
   private final SubmissionRepository submissionRepository;
+  private final SubmissionResultDetailRepository submissionResultDetailRepository;
   private final ApplicationEventPublisher applicationEventPublisher;
 
   @Transactional
@@ -77,5 +81,64 @@ public class SubmissionService {
                     submission.getScore(),
                     submission.getSubmittedAt()))
         .collect(Collectors.toList());
+  }
+
+  @Transactional
+  public void cancelSubmission(UUID userId, UUID submissionId) {
+    Submission submission =
+        submissionRepository
+            .findById(submissionId)
+            .orElseThrow(() -> new BusinessException(SubmissionErrorCode.SUBMISSION_NOT_FOUND));
+
+    if (!submission.getUserId().equals(userId)) {
+      throw new BusinessException(SubmissionErrorCode.SUBMISSION_NOT_FOUND);
+    }
+
+    List<SubmissionStatus> cancellable =
+        List.of(SubmissionStatus.ENQUEUING, SubmissionStatus.QUEUED, SubmissionStatus.PROCESSING);
+
+    if (!cancellable.contains(submission.getStatus())) {
+      throw new BusinessException(SubmissionErrorCode.SUBMISSION_NOT_FOUND);
+    }
+
+    submission.markCancelled();
+  }
+
+  @Transactional(readOnly = true)
+  public SubmissionDetailResponse getSubmissionDetail(UUID userId, UUID submissionId) {
+    Submission submission =
+        submissionRepository
+            .findById(submissionId)
+            .orElseThrow(() -> new BusinessException(SubmissionErrorCode.SUBMISSION_NOT_FOUND));
+
+    if (!submission.getUserId().equals(userId)) {
+      throw new BusinessException(SubmissionErrorCode.SUBMISSION_NOT_FOUND);
+    }
+
+    List<SubmissionResultDetail> details =
+        submissionResultDetailRepository.findBySubmissionId(submissionId);
+
+    List<SubmissionDetailResponse.TestDetailResponse> testDetails =
+        details.stream()
+            .map(
+                d ->
+                    new SubmissionDetailResponse.TestDetailResponse(
+                        d.isHidden() ? "히든 테스트 케이스" : d.getMethodName(),
+                        d.getStatus(),
+                        d.getDurationMs(),
+                        d.isHidden() ? null : d.getMessage(),
+                        d.isHidden(),
+                        d.getScore()))
+            .toList();
+
+    return new SubmissionDetailResponse(
+        submission.getId(),
+        submission.getRepoUrl(),
+        submission.getStatus(),
+        submission.getScore(),
+        submission.getTotalTests(),
+        submission.getPassedTests(),
+        submission.getSubmittedAt(),
+        testDetails);
   }
 }

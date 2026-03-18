@@ -44,6 +44,7 @@ public class Submission {
   private String repoUrl;
 
   @Enumerated(EnumType.STRING)
+  @Column(name = "status", length = 20)
   private SubmissionStatus status;
 
   @Column private Integer score;
@@ -57,6 +58,12 @@ public class Submission {
 
   @Column(name = "memory_usage")
   private Integer memoryUsage;
+
+  @Column(name = "total_tests")
+  private Integer totalTests;
+
+  @Column(name = "passed_tests")
+  private Integer passedTests;
 
   @Builder
   private Submission(UUID userId, UUID projectId, String repoUrl) {
@@ -75,7 +82,22 @@ public class Submission {
     this.status = SubmissionStatus.QUEUED;
   }
 
+  public void markProcessing() {
+    this.status = SubmissionStatus.PROCESSING;
+  }
+
+  public void markCompleted(int score, int totalTests, int passedTests) {
+    this.status = SubmissionStatus.COMPLETED;
+    this.score = score;
+    this.totalTests = totalTests;
+    this.passedTests = passedTests;
+  }
+
   public void markSystemError() {
     this.status = SubmissionStatus.SYSTEM_ERROR;
+  }
+
+  public void markCancelled() {
+    this.status = SubmissionStatus.CANCELLED;
   }
 }

@@ -12,6 +12,7 @@ import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository
 import org.channel.ensharponlinejudge.user.domain.User;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -27,7 +28,7 @@ public class SubmissionCreatedEventListener {
   private final UserRepository userRepository;
   private final SubmissionQueuePublisher submissionQueuePublisher;
 
-  @Transactional
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   public void onSubmissionQueued(SubmissionCreatedEvent submissionCreatedEvent) {
 

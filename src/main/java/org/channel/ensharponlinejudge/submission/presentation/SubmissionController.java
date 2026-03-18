@@ -29,9 +29,7 @@ public class SubmissionController {
       @PathVariable("projectId") UUID projectId,
       @RequestParam("userId") UUID userId, // TODO: JWT 적용 후 제거
       @Valid @RequestBody SubmitRequest submitRequest) {
-    UUID submissionId =
-        submissionService.submit(
-            userId, projectId, submitRequest.repoUrl());
+    UUID submissionId = submissionService.submit(userId, projectId, submitRequest.repoUrl());
 
     return ResponseEntity.status(201).body(new SubmitResponse(submissionId));
   }

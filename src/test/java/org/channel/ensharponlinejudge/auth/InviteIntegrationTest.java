@@ -57,7 +57,7 @@ public class InviteIntegrationTest extends ApiTestBase {
   }
 
   @Test
-  @DisplayName("만료된 초대 토큰으로 검증 요청 시 500 에러를 반환한다.")
+  @DisplayName("만료된 초대 토큰으로 검증 요청 시 400 에러를 반환한다.")
   void validateInvite_ExpiredToken_ReturnsError() throws InterruptedException {
     // 1. 초대 토큰 생성 (1ms 만료)
     InviteRequest inviteRequest = new InviteRequest(Role.MENTOR, 1L);

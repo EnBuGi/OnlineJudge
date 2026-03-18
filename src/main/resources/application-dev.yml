@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/ensharp_oj_dev?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.MySQLDialect
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+jwt:
+  secret: ${JWT_SECRET:enNoYXJwLW9ubGluZS1qdWxnZS1kZXYtc2VjcmV0LWtleS1mb3ItamN3dC1rZXk=}
+  cookie:
+    secure: false
+
+github:
+  client-id: ${GITHUB_CLIENT_ID:Iv23liMFHtuORRANPuK2}
+  client-secret: ${GITHUB_CLIENT_SECRET:0b4e8b6c35b8d8fb78eb61d4ffd7ce14cc6d2800}
+
+security:
+  cors:
+    allowed-origin: ${ALLOWED_ORIGIN:http://localhost:3000}

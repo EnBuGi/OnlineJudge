@@ -9,5 +9,5 @@ public record SubmissionHistoryResponse(
     UUID submissionId,
     String repoUrl,
     SubmissionStatus status,
-    int score,
+    Integer score,
     LocalDateTime submittedAt) {}

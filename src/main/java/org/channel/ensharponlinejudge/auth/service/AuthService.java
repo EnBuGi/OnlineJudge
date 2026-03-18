@@ -51,7 +51,9 @@ public class AuthService {
       User user = userOpt.get();
       Authentication authentication =
           new UsernamePasswordAuthenticationToken(
-              user.getGithubId(), null, List.of(new SimpleGrantedAuthority(user.getRole().name())));
+              user.getId().toString(),
+              null,
+              List.of(new SimpleGrantedAuthority(user.getRole().name())));
       return issueTokens(authentication);
     } else {
       return new GithubLoginInfoResponse("회원가입이 필요합니다.", githubId, profileImageUrl);
@@ -91,7 +93,9 @@ public class AuthService {
 
     Authentication authentication =
         new UsernamePasswordAuthenticationToken(
-            user.getGithubId(), null, List.of(new SimpleGrantedAuthority(user.getRole().name())));
+            user.getId().toString(),
+            null,
+            List.of(new SimpleGrantedAuthority(user.getRole().name())));
     return issueTokens(authentication);
   }
 

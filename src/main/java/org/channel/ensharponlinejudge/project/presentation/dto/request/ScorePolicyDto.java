@@ -10,4 +10,6 @@ import lombok.Builder;
 
 @Builder
 public record ScorePolicyDto(
-    @Positive int timeLimit, @Positive int memoryLimit, @Valid @NotNull List<TestCaseDto> cases) {}
+    @Positive Integer timeLimit,
+    @Positive Integer memoryLimit,
+    @Valid @NotNull List<TestCaseDto> cases) {}

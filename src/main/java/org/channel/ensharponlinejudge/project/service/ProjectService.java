@@ -248,7 +248,7 @@ public class ProjectService {
             .findById(projectId)
             .orElseThrow(() -> new BusinessException(ProjectErrorCode.ERR_PROJECT_NOT_FOUND));
 
-    if (project.getGeneration() != user.getGeneration()) {
+    if (project.getGeneration() < user.getGeneration()) {
       throw new BusinessException(ProjectErrorCode.ERR_FORBIDDEN);
     }
 

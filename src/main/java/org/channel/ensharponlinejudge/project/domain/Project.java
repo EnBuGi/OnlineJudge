@@ -52,10 +52,10 @@ public class Project {
   private String testCodeUrl;
 
   @Column(name = "time_limit")
-  private int timeLimit;
+  private Integer timeLimit;
 
   @Column(name = "memory_limit")
-  private int memoryLimit;
+  private Integer memoryLimit;
 
   @CreationTimestamp
   @Column(name = "created_at", nullable = false)
@@ -75,8 +75,8 @@ public class Project {
       LocalDateTime dueDate,
       String skeletonUrl,
       String testCodeUrl,
-      int timeLimit,
-      int memoryLimit) {
+      Integer timeLimit,
+      Integer memoryLimit) {
     this.generation = generation;
     this.type = type;
     this.title = title;
@@ -98,8 +98,8 @@ public class Project {
       LocalDateTime dueDate,
       String skeletonUrl,
       String testCodeUrl,
-      int timeLimit,
-      int memoryLimit) {
+      Integer timeLimit,
+      Integer memoryLimit) {
     return Project.builder()
         .generation(generation)
         .type(type)
@@ -122,8 +122,8 @@ public class Project {
       LocalDateTime dueDate,
       String skeletonUrl,
       String testCodeUrl,
-      int timeLimit,
-      int memoryLimit) {
+      Integer timeLimit,
+      Integer memoryLimit) {
     this.type = type;
     this.title = title;
     this.description = description;

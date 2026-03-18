@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import org.channel.ensharponlinejudge.auth.filter.JwtAuthenticationFilter;
+import org.channel.ensharponlinejudge.auth.filter.RateLimitFilter;
 import org.channel.ensharponlinejudge.auth.service.JwtTokenProvider;
 import org.channel.ensharponlinejudge.auth.service.store.TokenStore;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,8 +41,12 @@ public class SecurityConfig {
   @Value("${security.paths-to-permit.post:}")
   private String[] postPermitUrls;
 
+  @Value("${security.cors.allowed-origin:http://localhost:3000}")
+  private String allowedOrigin;
+
   private final JwtTokenProvider jwtTokenProvider;
   private final TokenStore tokenStore;
+  private final RateLimitFilter rateLimitFilter;
 
   @Bean
   public PasswordEncoder passwordEncoder() {
@@ -50,18 +55,18 @@ public class SecurityConfig {
 
   @Bean
   public AuthenticationManager authenticationManager(
-      AuthenticationConfiguration authenticationConfiguration) {
+      AuthenticationConfiguration authenticationConfiguration) throws Exception {
     return authenticationConfiguration.getAuthenticationManager();
   }
 
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http) {
+  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-        .csrf(AbstractHttpConfigurer::disable) // JWT 사용 시 CSRF 비활성화 (Access Token이 헤더에 들어가므로)
+        .csrf(AbstractHttpConfigurer::disable) // JWT 사용 시 CSRF 비활성화
         .httpBasic(AbstractHttpConfigurer::disable)
         .formLogin(AbstractHttpConfigurer::disable)
         .sessionManagement(
-            session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 미사용
+            session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             auth ->
                 auth.requestMatchers(allPermitUrls)
@@ -70,8 +75,13 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, postPermitUrls)
                     .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/v1/admin/**")
+                    .hasRole("MENTOR")
+                    .requestMatchers(HttpMethod.DELETE, "/api/v1/admin/**")
+                    .hasRole("MENTOR")
                     .anyRequest()
                     .authenticated())
+        .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
         .addFilterBefore(
             new JwtAuthenticationFilter(jwtTokenProvider, tokenStore),
             UsernamePasswordAuthenticationFilter.class);
@@ -82,7 +92,7 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(Collections.singletonList("http://localhost:3000"));
+    configuration.setAllowedOrigins(Collections.singletonList(allowedOrigin));
     configuration.setAllowedMethods(
         Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(Collections.singletonList("*"));

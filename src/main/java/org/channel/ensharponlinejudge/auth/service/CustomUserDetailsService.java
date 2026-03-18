@@ -1,7 +1,7 @@
 package org.channel.ensharponlinejudge.auth.service;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.UUID;
 
 import org.channel.ensharponlinejudge.user.domain.User;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
@@ -23,17 +23,21 @@ public class CustomUserDetailsService implements UserDetailsService {
 
   @Override
   @Transactional
-  public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-    User member =
-        memberRepository
-            .findByEmail(email)
-            .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + email));
-    List<GrantedAuthority> grantedAuthorities =
-        member.getRoles().stream()
-            .map(role -> new SimpleGrantedAuthority(role.name()))
-            .collect(Collectors.toList());
+  public UserDetails loadUserByUsername(String subject) throws UsernameNotFoundException {
+    User member;
+    try {
+      member =
+          memberRepository
+              .findById(UUID.fromString(subject))
+              .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + subject));
+    } catch (IllegalArgumentException e) {
+      throw new UsernameNotFoundException("유효한 UUID가 아닙니다: " + subject);
+    }
 
-    // Spring Security는 UserDetails 인터페이스의 구현체로 사용자 정보를 다룹니다.
-    return new org.springframework.security.core.userdetails.User(member.getEmail(), member.getPassword(), grantedAuthorities);
+    List<GrantedAuthority> grantedAuthorities =
+        List.of(new SimpleGrantedAuthority(member.getRole().name()));
+
+    return new org.springframework.security.core.userdetails.User(
+        member.getId().toString(), "", grantedAuthorities);
   }
 }

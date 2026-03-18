@@ -1,0 +1,103 @@
+name: Deploy to Prod
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/enbuge-api
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build with Gradle (skip tests)
+        run: ./gradlew bootJar -x test --no-daemon
+
+      - name: Set up QEMU (ARM 크로스 빌드 지원)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/arm64
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:prod-latest
+            ${{ env.DOCKER_IMAGE }}:prod-${{ github.sha }}
+
+      - name: Docker Compose 파일 서버에 복사
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "docker-compose.prod.yml,docker-compose.redis.yml"
+          target: /opt/enbuge/
+          strip_components: 0
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            # OCI Private Key 파일 생성 (최초 1회 or 갱신)
+            mkdir -p /opt/enbuge/secrets
+            echo "${{ secrets.OCI_PRIVATE_KEY }}" > /opt/enbuge/secrets/oci_key.pem
+            chmod 600 /opt/enbuge/secrets/oci_key.pem
+
+            # .env 파일 생성
+            cat > /opt/enbuge/prod.env <<EOF
+            DOCKER_IMAGE=${{ env.DOCKER_IMAGE }}
+            IMAGE_TAG=${{ github.sha }}
+            PROD_DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+            PROD_JWT_SECRET=${{ secrets.PROD_JWT_SECRET }}
+            PROD_GITHUB_CLIENT_ID=${{ secrets.PROD_GITHUB_CLIENT_ID }}
+            PROD_GITHUB_CLIENT_SECRET=${{ secrets.PROD_GITHUB_CLIENT_SECRET }}
+            PROD_ALLOWED_ORIGIN=${{ secrets.PROD_ALLOWED_ORIGIN }}
+            OCI_TENANT_ID=${{ secrets.OCI_TENANT_ID }}
+            OCI_USER_ID=${{ secrets.OCI_USER_ID }}
+            OCI_FINGERPRINT=${{ secrets.OCI_FINGERPRINT }}
+            OCI_REGION=${{ secrets.OCI_REGION }}
+            OCI_NAMESPACE=${{ secrets.OCI_NAMESPACE }}
+            OCI_TEST_CODE_BUCKET_NAME=${{ secrets.OCI_TEST_CODE_BUCKET_NAME }}
+            EOF
+
+            # 이미지 Pull
+            docker pull ${{ env.DOCKER_IMAGE }}:prod-${{ github.sha }}
+
+            # 컨테이너 교체
+            cd /opt/enbuge
+            docker compose -f docker-compose.prod.yml --env-file prod.env up -d --no-deps api-prod
+
+            # 오래된 이미지 정리
+            docker image prune -f

@@ -12,6 +12,7 @@ import org.channel.ensharponlinejudge.exception.BusinessException;
 import org.channel.ensharponlinejudge.exception.enums.ProjectErrorCode;
 import org.channel.ensharponlinejudge.project.domain.Project;
 import org.channel.ensharponlinejudge.project.domain.ProjectTestCase;
+import org.channel.ensharponlinejudge.project.infra.storage.ObjectStorageService;
 import org.channel.ensharponlinejudge.project.presentation.dto.request.ProjectCreateRequest;
 import org.channel.ensharponlinejudge.project.presentation.dto.request.ProjectUpdateRequest;
 import org.channel.ensharponlinejudge.project.presentation.dto.request.ScorePolicyDto;
@@ -21,6 +22,7 @@ import org.channel.ensharponlinejudge.project.presentation.dto.response.AdminPro
 import org.channel.ensharponlinejudge.project.presentation.dto.response.MenteeProjectDetailResponse;
 import org.channel.ensharponlinejudge.project.presentation.dto.response.MenteeProjectListResponse;
 import org.channel.ensharponlinejudge.project.presentation.dto.response.TestCodeParseResponse;
+import org.channel.ensharponlinejudge.project.presentation.dto.response.TestCodeUploadResponse;
 import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
 import org.channel.ensharponlinejudge.project.repository.ProjectTestCaseRepository;
 import org.channel.ensharponlinejudge.user.domain.Role;
@@ -38,6 +40,7 @@ public class ProjectService {
   private final ProjectRepository projectRepository;
   private final ProjectTestCaseRepository projectTestCaseRepository;
   private final UserRepository userRepository;
+  private final ObjectStorageService objectStorageService;
 
   @Transactional
   public UUID createProject(UUID userId, ProjectCreateRequest request) {
@@ -313,5 +316,38 @@ public class ProjectService {
     }
 
     return TestCodeParseResponse.builder().methodNames(methodNames).build();
+  }
+
+  /**
+   * 테스트 코드 .zip 파일을 OCI 오브젝트 스토리지에 업로드하고, 생성된 PAR URL을 프로젝트에 저장합니다. 업로드 전 .zip 파일 내 src/test 디렉토리
+   * 존재 여부를 검증합니다.
+   */
+  @Transactional
+  public TestCodeUploadResponse uploadTestCode(UUID userId, UUID projectId, MultipartFile file) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(ProjectErrorCode.ERR_FORBIDDEN));
+
+    if (user.getRole() != Role.MENTOR) {
+      throw new BusinessException(ProjectErrorCode.ERR_FORBIDDEN);
+    }
+
+    Project project =
+        projectRepository
+            .findById(projectId)
+            .orElseThrow(() -> new BusinessException(ProjectErrorCode.ERR_PROJECT_NOT_FOUND));
+
+    // OCI에 업로드 (내부에서 .zip 및 src/test 디렉토리 검증 수행)
+    String objectKey = projectId.toString() + "/test-code.zip";
+    objectStorageService.uploadTestCode(file, objectKey);
+
+    // PAR GET URL 생성
+    String testCodeUrl = objectStorageService.generateGetUrl(objectKey);
+
+    // 프로젝트에 testCodeUrl 저장
+    project.updateTestCodeUrl(testCodeUrl);
+
+    return TestCodeUploadResponse.builder().testCodeUrl(testCodeUrl).build();
   }
 }

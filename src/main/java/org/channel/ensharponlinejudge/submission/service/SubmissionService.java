@@ -2,6 +2,7 @@ package org.channel.ensharponlinejudge.submission.service;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.channel.ensharponlinejudge.exception.BusinessException;
 import org.channel.ensharponlinejudge.exception.enums.SubmissionErrorCode;
@@ -9,6 +10,7 @@ import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
 import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
 import org.channel.ensharponlinejudge.submission.infra.queue.dto.SubmissionCreatedEvent;
+import org.channel.ensharponlinejudge.submission.presentation.dto.response.SubmissionHistoryResponse;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
 import org.springframework.context.ApplicationEventPublisher;
@@ -51,5 +53,29 @@ public class SubmissionService {
     applicationEventPublisher.publishEvent(new SubmissionCreatedEvent(savedSubmission.getId()));
 
     return savedSubmission.getId();
+  }
+
+  @Transactional(readOnly = true)
+  public List<SubmissionHistoryResponse> getSubmissionHistory(UUID userId, UUID projectId) {
+    projectRepository
+        .findById(projectId)
+        .orElseThrow(() -> new BusinessException(SubmissionErrorCode.PROJECT_NOT_FOUND));
+
+    userRepository
+        .findById(userId)
+        .orElseThrow(() -> new BusinessException(SubmissionErrorCode.USER_NOT_FOUND));
+
+    return submissionRepository
+        .findByUserIdAndProjectIdOrderBySubmittedAtDesc(userId, projectId)
+        .stream()
+        .map(
+            submission ->
+                new SubmissionHistoryResponse(
+                    submission.getId(),
+                    submission.getRepoUrl(),
+                    submission.getStatus(),
+                    submission.getScore(),
+                    submission.getSubmittedAt()))
+        .collect(Collectors.toList());
   }
 }

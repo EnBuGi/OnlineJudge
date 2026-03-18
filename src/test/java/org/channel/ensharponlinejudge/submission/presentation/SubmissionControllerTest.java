@@ -2,6 +2,7 @@ package org.channel.ensharponlinejudge.submission.presentation;
 
 import static org.mockito.BDDMockito.then;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -79,5 +80,25 @@ public class SubmissionControllerTest {
         .andExpect(status().isCreated());
 
     then(submissionService).should().submit(userId, projectId, submitRequest.repoUrl());
+  }
+
+  @Test
+  @DisplayName("정상 조회 시 200 반환")
+  void Given정상요청시_When제출기록을조회하면_Expect200을반환한다() throws Exception {
+    UUID userId = UUID.randomUUID();
+    UUID projectId = UUID.randomUUID();
+
+    mockMvc
+        .perform(
+            get("/api/v1/projects/" + projectId + "/submissions")
+                .with(
+                    user(
+                        new org.springframework.security.core.userdetails.User(
+                            userId.toString(),
+                            "",
+                            List.of(new SimpleGrantedAuthority("ROLE_USER"))))))
+        .andExpect(status().isOk());
+
+    then(submissionService).should().getSubmissionHistory(userId, projectId);
   }
 }

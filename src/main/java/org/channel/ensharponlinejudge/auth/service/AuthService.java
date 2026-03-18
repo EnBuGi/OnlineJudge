@@ -3,6 +3,7 @@ package org.channel.ensharponlinejudge.auth.service;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.channel.ensharponlinejudge.auth.controller.requests.GithubLoginRequest;
 import org.channel.ensharponlinejudge.auth.controller.requests.GithubSignupRequest;
@@ -35,6 +36,11 @@ public class AuthService {
 
   @Transactional
   public Object loginGithub(GithubLoginRequest request) {
+    // state 검증 (CSRF 방지)
+    if (!tokenStore.isValidState(request.getState())) {
+      throw new BusinessException(AuthErrorCode.INVALID_OAUTH_STATE);
+    }
+
     String accessToken = githubOAuthClient.getAccessToken(request.getCode());
     Map<String, Object> userInfo = githubOAuthClient.getUserInfo(accessToken);
     String githubId = String.valueOf(userInfo.get("id")); // id is unique and numeric.
@@ -138,5 +144,19 @@ public class AuthService {
         authentication.getName(), refreshToken, jwtTokenProvider.getRefreshTokenValidity());
 
     return TokenDto.builder().accessToken(accessToken).refreshToken(refreshToken).build();
+  }
+
+  public String getGithubLoginUrl(String redirectUri) {
+    String state = UUID.randomUUID().toString();
+    tokenStore.saveState(state);
+
+    return "https://github.com/login/oauth/authorize?"
+        + "client_id="
+        + githubOAuthClient.getClientId()
+        + "&redirect_uri="
+        + redirectUri
+        + "&state="
+        + state
+        + "&scope=user:email";
   }
 }

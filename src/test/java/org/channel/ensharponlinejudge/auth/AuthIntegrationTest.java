@@ -22,9 +22,25 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 
+import io.restassured.http.Cookie;
+import io.restassured.response.Response;
+
 public class AuthIntegrationTest extends ApiTestBase {
 
   @MockBean private GithubOAuthClient githubOAuthClient;
+
+  private String getValidState() {
+    return given()
+        .queryParam("redirectUri", "http://localhost:3000/auth/github/callback")
+        .when()
+        .get("/api/v1/auth/login/github/url")
+        .then()
+        .statusCode(HttpStatus.OK.value())
+        .extract()
+        .asString()
+        .split("state=")[1]
+        .split("&")[0];
+  }
 
   @Test
   @DisplayName("GitHub 로그인 시 새로운 사용자면 404와 가입 정보를 반환한다.")
@@ -36,7 +52,8 @@ public class AuthIntegrationTest extends ApiTestBase {
             Map.of(
                 "id", "12345", "avatar_url", "https://github.com/avatar.png", "login", "testuser"));
 
-    GithubLoginRequest request = new GithubLoginRequest("test-code", null);
+    String state = getValidState();
+    GithubLoginRequest request = new GithubLoginRequest("test-code", state);
 
     // When & Then
     given()
@@ -95,7 +112,8 @@ public class AuthIntegrationTest extends ApiTestBase {
             Map.of(
                 "id", "12345", "avatar_url", "https://github.com/avatar.png", "login", "testuser"));
 
-    GithubLoginRequest loginRequest = new GithubLoginRequest("test-code", null);
+    String state = getValidState();
+    GithubLoginRequest loginRequest = new GithubLoginRequest("test-code", state);
 
     given()
         .contentType(MediaType.APPLICATION_JSON_VALUE)

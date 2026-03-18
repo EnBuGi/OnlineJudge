@@ -32,11 +32,27 @@ public class TokenStore {
     }
   }
 
+  @Getter
+  private static final class OAuthStateInfo {
+    private final long expirationTime;
+
+    private OAuthStateInfo(long durationInMillis) {
+      this.expirationTime = System.currentTimeMillis() + durationInMillis;
+    }
+
+    private boolean isExpired() {
+      return System.currentTimeMillis() > expirationTime;
+    }
+  }
+
   // Key: Email, Value: TokenInfo (RefreshToken)
   private final Map<String, TokenInfo> refreshTokenStore = new ConcurrentHashMap<>();
 
   // Key: AccessToken, Value: ExpirationTime (Blacklist)
   private final Map<String, Long> blackListStore = new ConcurrentHashMap<>();
+
+  // Key: OAuthState, Value: OAuthStateInfo
+  private final Map<String, OAuthStateInfo> oAuthStateStore = new ConcurrentHashMap<>();
 
   // Refresh Token 저장
   public void saveRefreshToken(String email, String refreshToken, long durationInMillis) {
@@ -75,12 +91,25 @@ public class TokenStore {
     return true;
   }
 
+  // OAuth State 저장 (유효시간 5분)
+  public void saveState(String state) {
+    oAuthStateStore.put(state, new OAuthStateInfo(300_000L));
+  }
+
+  // OAuth State 검증 및 삭제 (일회용)
+  public boolean isValidState(String state) {
+    if (state == null) return false;
+    OAuthStateInfo info = oAuthStateStore.remove(state);
+    return info != null && !info.isExpired();
+  }
+
   // 1시간마다 만료된 토큰 정리
   @Scheduled(fixedRate = 3600000)
   public void cleanUp() {
     long now = System.currentTimeMillis();
     int removedRefreshTokenCount = 0;
     int removedBlacklistCount = 0;
+    int removedStateCount = 0;
 
     // Refresh Token 정리
     Iterator<Map.Entry<String, TokenInfo>> refreshIterator =
@@ -101,11 +130,22 @@ public class TokenStore {
       }
     }
 
-    if (removedRefreshTokenCount > 0 || removedBlacklistCount > 0) {
+    // OAuth State 정리
+    Iterator<Map.Entry<String, OAuthStateInfo>> stateIterator =
+        oAuthStateStore.entrySet().iterator();
+    while (stateIterator.hasNext()) {
+      if (stateIterator.next().getValue().isExpired()) {
+        stateIterator.remove();
+        removedStateCount++;
+      }
+    }
+
+    if (removedRefreshTokenCount > 0 || removedBlacklistCount > 0 || removedStateCount > 0) {
       log.info(
-          "Expired tokens cleaned up: {} refresh tokens, {} blacklist tokens.",
+          "Expired tokens cleaned up: {} refresh tokens, {} blacklist tokens, {} states.",
           removedRefreshTokenCount,
-          removedBlacklistCount);
+          removedBlacklistCount,
+          removedStateCount);
     }
   }
 }

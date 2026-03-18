@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GithubOAuthClient {
 
+  @Getter
   @Value("${github.client-id:defaultId}")
   private String clientId;
 

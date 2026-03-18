@@ -43,6 +43,14 @@ public class AuthController {
   @Value("${jwt.cookie.path:/}")
   private String refreshTokenCookiePath;
 
+  @Operation(
+      summary = "GitHub 로그인 URL 조회",
+      description = "안전한 생성을 위해 state가 포함된 GitHub 로그인 URL을 반환합니다.")
+  @GetMapping("/auth/login/github/url")
+  public ResponseEntity<String> getGithubLoginUrl(@RequestParam String redirectUri) {
+    return ResponseEntity.ok(authService.getGithubLoginUrl(redirectUri));
+  }
+
   @Operation(summary = "GitHub 로그인", description = "GitHub Code를 받아 로그인 또는 회원가입 필요 정보를 응답합니다.")
   @PostMapping("/auth/login/github")
   public ResponseEntity<?> loginGithub(

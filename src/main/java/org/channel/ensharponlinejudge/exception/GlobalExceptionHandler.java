@@ -10,6 +10,9 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -37,6 +40,7 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(Exception.class)
   protected ResponseEntity<ErrorResponse> handleException(Exception e) {
+    log.error("Internal Server Error occurred", e);
     ErrorCode errorCode = CommonErrorCode.INTERNAL_SERVER_ERROR;
     ErrorResponse response = createErrorResponse(errorCode);
     return new ResponseEntity<>(response, errorCode.getStatus());

@@ -7,6 +7,8 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.*;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,6 +19,7 @@ import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
 import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
 import org.channel.ensharponlinejudge.submission.infra.queue.dto.SubmissionCreatedEvent;
+import org.channel.ensharponlinejudge.submission.presentation.dto.response.SubmissionHistoryResponse;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
 import org.channel.ensharponlinejudge.user.domain.User;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
@@ -177,6 +180,32 @@ public class SubmissionServiceTest {
     then(applicationEventPublisher)
         .should()
         .publishEvent(new SubmissionCreatedEvent(submisssionId));
+  }
+
+  @DisplayName("정상 채점 기록 조회 테스트")
+  @Test
+  void Given제출기록이있을때_When조회를_요청하면_Expect리스트가_반환된다() {
+    UUID userId = UUID.randomUUID();
+    UUID projectId = UUID.randomUUID();
+
+    givenProjectAndUserExist(projectId, userId);
+
+    Submission mockSubmission = mock(Submission.class);
+    given(mockSubmission.getId()).willReturn(UUID.randomUUID());
+    given(mockSubmission.getRepoUrl()).willReturn("http://github.com/vvineey/example");
+    given(mockSubmission.getStatus()).willReturn(SubmissionStatus.COMPLETED);
+    given(mockSubmission.getScore()).willReturn(100);
+    given(mockSubmission.getSubmittedAt()).willReturn(LocalDateTime.now());
+
+    given(submissionRepository.findByUserIdAndProjectIdOrderBySubmittedAtDesc(userId, projectId))
+        .willReturn(List.of(mockSubmission));
+
+    List<SubmissionHistoryResponse> result =
+        submissionService.getSubmissionHistory(userId, projectId);
+
+    assertThat(result.size()).isEqualTo(1);
+    assertThat(result.get(0).status()).isEqualTo(SubmissionStatus.COMPLETED);
+    assertThat(result.get(0).score()).isEqualTo(100);
   }
 
   // 프로젝트 존재 기본 전제

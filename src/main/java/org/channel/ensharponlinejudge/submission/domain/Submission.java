@@ -3,7 +3,14 @@ package org.channel.ensharponlinejudge.submission.domain;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -37,19 +44,26 @@ public class Submission {
   private String repoUrl;
 
   @Enumerated(EnumType.STRING)
+  @Column(name = "status", length = 20)
   private SubmissionStatus status;
 
-  @Column private int score;
+  @Column private Integer score;
 
   @CreationTimestamp
   @Column(name = "submit_at", nullable = false)
   private LocalDateTime submittedAt;
 
   @Column(name = "time_usage")
-  private int timeUsage;
+  private Integer timeUsage;
 
   @Column(name = "memory_usage")
-  private int memoryUsage;
+  private Integer memoryUsage;
+
+  @Column(name = "total_tests")
+  private Integer totalTests;
+
+  @Column(name = "passed_tests")
+  private Integer passedTests;
 
   @Builder
   private Submission(UUID userId, UUID projectId, String repoUrl) {
@@ -68,7 +82,22 @@ public class Submission {
     this.status = SubmissionStatus.QUEUED;
   }
 
+  public void markProcessing() {
+    this.status = SubmissionStatus.PROCESSING;
+  }
+
+  public void markCompleted(int score, int totalTests, int passedTests) {
+    this.status = SubmissionStatus.COMPLETED;
+    this.score = score;
+    this.totalTests = totalTests;
+    this.passedTests = passedTests;
+  }
+
   public void markSystemError() {
     this.status = SubmissionStatus.SYSTEM_ERROR;
+  }
+
+  public void markCancelled() {
+    this.status = SubmissionStatus.CANCELLED;
   }
 }

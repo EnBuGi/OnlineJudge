@@ -13,5 +13,5 @@ public record AdminProjectSubmissionSummaryResponse(
     String name,
     String githubId,
     SubmissionStatus status,
-    int score,
+    Integer score,
     LocalDateTime lastSubmittedAt) {}

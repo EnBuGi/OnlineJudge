@@ -11,10 +11,15 @@ import lombok.Builder;
 @Builder
 public record AdminSubmissionDetailResponse(
     UUID submissionId,
+    String userName,
+    String githubId,
     String repoUrl,
     SubmissionStatus status,
     int score,
+    Integer memoryUsage,
+    Integer timeExecution,
     LocalDateTime submittedAt,
+    String sourceCode,
     List<TestDetailResponse> testDetails) {
 
   @Builder

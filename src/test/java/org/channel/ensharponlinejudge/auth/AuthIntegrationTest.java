@@ -2,7 +2,8 @@ package org.channel.ensharponlinejudge.auth;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.matcher.RestAssuredMatchers.detailedCookie;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -21,9 +22,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 
-import io.restassured.http.Cookie;
-import io.restassured.response.Response;
-
 public class AuthIntegrationTest extends ApiTestBase {
 
   @MockBean private GithubOAuthClient githubOAuthClient;
@@ -38,7 +36,7 @@ public class AuthIntegrationTest extends ApiTestBase {
             Map.of(
                 "id", "12345", "avatar_url", "https://github.com/avatar.png", "login", "testuser"));
 
-    GithubLoginRequest request = new GithubLoginRequest("test-code");
+    GithubLoginRequest request = new GithubLoginRequest("test-code", null);
 
     // When & Then
     given()
@@ -97,7 +95,7 @@ public class AuthIntegrationTest extends ApiTestBase {
             Map.of(
                 "id", "12345", "avatar_url", "https://github.com/avatar.png", "login", "testuser"));
 
-    GithubLoginRequest loginRequest = new GithubLoginRequest("test-code");
+    GithubLoginRequest loginRequest = new GithubLoginRequest("test-code", null);
 
     given()
         .contentType(MediaType.APPLICATION_JSON_VALUE)

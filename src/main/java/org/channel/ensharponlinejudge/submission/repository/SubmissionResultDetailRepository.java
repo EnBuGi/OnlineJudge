@@ -6,9 +6,6 @@ import java.util.UUID;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionResultDetail;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface SubmissionResultDetailRepository
-    extends JpaRepository<SubmissionResultDetail, UUID> {
+public interface SubmissionResultDetailRepository extends JpaRepository<SubmissionResultDetail, UUID> {
   List<SubmissionResultDetail> findBySubmissionId(UUID submissionId);
-
-  void deleteBySubmissionId(UUID submissionId);
 }

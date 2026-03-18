@@ -1,7 +1,11 @@
 package org.channel.ensharponlinejudge.project.service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.channel.ensharponlinejudge.exception.BusinessException;
@@ -16,6 +20,7 @@ import org.channel.ensharponlinejudge.project.presentation.dto.response.AdminPro
 import org.channel.ensharponlinejudge.project.presentation.dto.response.AdminProjectListResponse;
 import org.channel.ensharponlinejudge.project.presentation.dto.response.MenteeProjectDetailResponse;
 import org.channel.ensharponlinejudge.project.presentation.dto.response.MenteeProjectListResponse;
+import org.channel.ensharponlinejudge.project.presentation.dto.response.TestCodeParseResponse;
 import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
 import org.channel.ensharponlinejudge.project.repository.ProjectTestCaseRepository;
 import org.channel.ensharponlinejudge.user.domain.Role;
@@ -23,6 +28,7 @@ import org.channel.ensharponlinejudge.user.domain.User;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
 
@@ -284,6 +290,28 @@ public class ProjectService {
         .skeletonUrl(project.getSkeletonUrl())
         // Mentee response explicitly excludes testCodeUrl
         .scorePolicy(scorePolicy)
-        .build();
+            .build();
+  }
+
+  public TestCodeParseResponse parseTestCode(MultipartFile file) {
+    List<String> methodNames = new ArrayList<>();
+    try (Scanner scanner = new Scanner(file.getInputStream())) {
+      StringBuilder content = new StringBuilder();
+      while (scanner.hasNextLine()) {
+        content.append(scanner.nextLine()).append("\n");
+      }
+
+      // JUnit @Test annotation regex
+      Pattern pattern = Pattern.compile("@Test\\s+(?:public\\s+)?void\\s+(\\w+)\\s*\\(");
+      Matcher matcher = pattern.matcher(content.toString());
+
+      while (matcher.find()) {
+        methodNames.add(matcher.group(1));
+      }
+    } catch (Exception e) {
+      throw new BusinessException(ProjectErrorCode.ERR_FILE_PARSE_FAILED);
+    }
+
+    return TestCodeParseResponse.builder().methodNames(methodNames).build();
   }
 }

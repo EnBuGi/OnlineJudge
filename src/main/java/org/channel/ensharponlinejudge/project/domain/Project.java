@@ -11,6 +11,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -63,4 +64,74 @@ public class Project {
   @UpdateTimestamp
   @Column(name = "updated_at", nullable = false)
   private LocalDateTime updated_at;
+
+  @Builder
+  private Project(
+      int generation,
+      ProjectType type,
+      String title,
+      String description,
+      LocalDateTime startDate,
+      LocalDateTime dueDate,
+      String skeletonUrl,
+      String testCodeUrl,
+      int timeLimit,
+      int memoryLimit) {
+    this.generation = generation;
+    this.type = type;
+    this.title = title;
+    this.description = description;
+    this.startDate = startDate;
+    this.dueDate = dueDate;
+    this.skeletonUrl = skeletonUrl;
+    this.testCodeUrl = testCodeUrl;
+    this.timeLimit = timeLimit;
+    this.memoryLimit = memoryLimit;
+  }
+
+  public static Project initialize(
+      int generation,
+      ProjectType type,
+      String title,
+      String description,
+      LocalDateTime startDate,
+      LocalDateTime dueDate,
+      String skeletonUrl,
+      String testCodeUrl,
+      int timeLimit,
+      int memoryLimit) {
+    return Project.builder()
+        .generation(generation)
+        .type(type)
+        .title(title)
+        .description(description)
+        .startDate(startDate)
+        .dueDate(dueDate)
+        .skeletonUrl(skeletonUrl)
+        .testCodeUrl(testCodeUrl)
+        .timeLimit(timeLimit)
+        .memoryLimit(memoryLimit)
+        .build();
+  }
+
+  public void update(
+      ProjectType type,
+      String title,
+      String description,
+      LocalDateTime startDate,
+      LocalDateTime dueDate,
+      String skeletonUrl,
+      String testCodeUrl,
+      int timeLimit,
+      int memoryLimit) {
+    this.type = type;
+    this.title = title;
+    this.description = description;
+    this.startDate = startDate;
+    this.dueDate = dueDate;
+    this.skeletonUrl = skeletonUrl;
+    this.testCodeUrl = testCodeUrl;
+    this.timeLimit = timeLimit;
+    this.memoryLimit = memoryLimit;
+  }
 }

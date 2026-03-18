@@ -1,9 +1,11 @@
 package org.channel.ensharponlinejudge.submission.presentation;
 
 import static org.mockito.BDDMockito.then;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.channel.ensharponlinejudge.submission.presentation.dto.request.SubmitRequest;
@@ -14,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -35,11 +38,17 @@ public class SubmissionControllerTest {
     UUID userId = UUID.randomUUID();
     UUID projectId = UUID.randomUUID();
 
-    SubmitRequest submitRequest = new SubmitRequest(userId, projectId, "http://naver.com/test/ex");
+    SubmitRequest submitRequest = new SubmitRequest("http://naver.com/test/ex");
 
     mockMvc
         .perform(
-            post("/api/submissions")
+            post("/api/v1/projects/" + projectId + "/submissions")
+                .with(
+                    user(
+                        new org.springframework.security.core.userdetails.User(
+                            userId.toString(),
+                            "",
+                            List.of(new SimpleGrantedAuthority("ROLE_USER")))))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writer().writeValueAsString(submitRequest)))
         .andExpect(status().isBadRequest());
@@ -54,12 +63,17 @@ public class SubmissionControllerTest {
     UUID userId = UUID.randomUUID();
     UUID projectId = UUID.randomUUID();
 
-    SubmitRequest submitRequest =
-        new SubmitRequest(userId, projectId, "https://github.com/vvineey/example");
+    SubmitRequest submitRequest = new SubmitRequest("https://github.com/vvineey/example");
 
     mockMvc
         .perform(
-            post("/api/submissions")
+            post("/api/v1/projects/" + projectId + "/submissions")
+                .with(
+                    user(
+                        new org.springframework.security.core.userdetails.User(
+                            userId.toString(),
+                            "",
+                            List.of(new SimpleGrantedAuthority("ROLE_USER")))))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(submitRequest)))
         .andExpect(status().isCreated());

@@ -124,8 +124,8 @@ public class SubmissionService {
                 d ->
                     new SubmissionDetailResponse.TestDetailResponse(
                         d.isHidden() ? "히든 테스트 케이스" : d.getMethodName(),
-                        d.getStatus(),
-                        d.getDurationMs(),
+                        d.getStatus().name(),
+                        (long) d.getDurationMs(),
                         d.isHidden() ? null : d.getMessage(),
                         d.isHidden(),
                         d.getScore()))

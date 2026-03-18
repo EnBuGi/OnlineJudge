@@ -43,7 +43,7 @@ services:
     ports:
       - "8081:8080"
     volumes:
-      - /opt/enbuge/secrets:/app/secrets:ro
+      - /opt/ensharpOJ/secrets:/app/secrets:ro
     networks:
       - shared
       - prod
@@ -53,8 +53,8 @@ volumes:
 
 networks:
   shared:
-    name: enbuge_shared
+    name: ensharpOJ_shared
     external: true
   prod:
-    name: enbuge_prod
+    name: ensharpOJ_prod
     driver: bridge

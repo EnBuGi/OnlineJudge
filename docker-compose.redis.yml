@@ -17,5 +17,5 @@ volumes:
 
 networks:
   shared:
-    name: enbuge_shared
+    name: ensharpOJ_shared
     driver: bridge

@@ -6,7 +6,7 @@ on:
       - develop
 
 env:
-  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/enbuge-api
+  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/ensharpOJ-api
 
 jobs:
   build-and-deploy:
@@ -59,7 +59,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "docker-compose.dev.yml,docker-compose.redis.yml"
-          target: /opt/enbuge/
+          target: /opt/ensharpOJ/
           strip_components: 0
 
       - name: Deploy to Server via SSH
@@ -70,12 +70,12 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             # OCI Private Key 파일 생성 (최초 1회 or 갱신)
-            mkdir -p /opt/enbuge/secrets
-            echo "${{ secrets.OCI_PRIVATE_KEY }}" > /opt/enbuge/secrets/oci_key.pem
-            chmod 600 /opt/enbuge/secrets/oci_key.pem
+            mkdir -p /opt/ensharpOJ/secrets
+            echo "${{ secrets.OCI_PRIVATE_KEY }}" > /opt/ensharpOJ/secrets/oci_key.pem
+            chmod 600 /opt/ensharpOJ/secrets/oci_key.pem
 
             # .env 파일 생성
-            cat > /opt/enbuge/dev.env <<EOF
+            cat > /opt/ensharpOJ/dev.env <<EOF
             DOCKER_IMAGE=${{ env.DOCKER_IMAGE }}
             IMAGE_TAG=${{ github.sha }}
             DEV_DB_PASSWORD=${{ secrets.DEV_DB_PASSWORD }}
@@ -96,7 +96,7 @@ jobs:
             docker pull ${{ env.DOCKER_IMAGE }}:dev-${{ github.sha }}
 
             # 컨테이너 교체 (zero-downtime: 새 컨테이너 올리고 기존 제거)
-            cd /opt/enbuge
+            cd /opt/ensharpOJ
             docker compose -f docker-compose.dev.yml --env-file dev.env up -d --no-deps api-dev
 
             # 오래된 이미지 정리

@@ -1,9 +1,9 @@
 #!/bin/bash
-# 서버 최초 1회 실행 — /opt/enbuge 환경 세팅 스크립트
+# 서버 최초 1회 실행 — /opt/ensharpOJ 환경 세팅 스크립트
 
 set -e
 
-echo "=== EnBuGi 서버 초기 셋업 ==="
+echo "=== ensharpOJ 서버 초기 셋업 ==="
 
 # 1. Docker 설치 확인
 if ! command -v docker &> /dev/null; then
@@ -13,22 +13,22 @@ if ! command -v docker &> /dev/null; then
 fi
 
 # 2. 작업 디렉토리 생성
-sudo mkdir -p /opt/enbuge/secrets
-sudo chown -R $USER:$USER /opt/enbuge
+sudo mkdir -p /opt/ensharpOJ/secrets
+sudo chown -R $USER:$USER /opt/ensharpOJ
 
 # 3. docker-compose 파일 복사 (이미 clone 되어 있다고 가정)
-# cp docker-compose.*.yml /opt/enbuge/
+# cp docker-compose.*.yml /opt/ensharpOJ/
 
 # 4. OCI Private Key 파일 생성 (GitHub Actions가 배포 시 덮어씀 — 아래는 수동 최초 세팅용)
 # echo "OCI_PRIVATE_KEY 내용을 붙여넣고 Ctrl+D로 저장:"
-# cat > /opt/enbuge/secrets/oci_key.pem
-# chmod 600 /opt/enbuge/secrets/oci_key.pem
+# cat > /opt/ensharpOJ/secrets/oci_key.pem
+# chmod 600 /opt/ensharpOJ/secrets/oci_key.pem
 
 # 5. 공유 네트워크 생성
-docker network create enbuge_shared 2>/dev/null || true
+docker network create ensharpOJ_shared 2>/dev/null || true
 
 # 6. Redis 기동 (공유, 최초 1회)
-cd /opt/enbuge
+cd /opt/ensharpOJ
 REDIS_PASSWORD=${REDIS_PASSWORD:-} \
   docker compose -f docker-compose.redis.yml up -d
 

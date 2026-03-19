@@ -10,6 +10,7 @@ import lombok.Builder;
 @Builder
 public record AdminGlobalSubmissionResponse(
     UUID submissionId,
+    UUID projectId,
     LocalDateTime submittedAt,
     String githubId,
     String name,

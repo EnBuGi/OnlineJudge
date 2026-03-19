@@ -15,7 +15,7 @@ public record AdminSubmissionDetailResponse(
     String githubId,
     String repoUrl,
     SubmissionStatus status,
-    int score,
+    Integer score,
     Integer memoryUsage,
     Integer timeExecution,
     LocalDateTime submittedAt,
@@ -26,8 +26,8 @@ public record AdminSubmissionDetailResponse(
   public record TestDetailResponse(
       String methodName,
       SubmissionStatus status,
-      int durationMs,
+      Integer durationMs,
       String message,
       boolean isHidden,
-      int score) {}
+      Integer score) {}
 }

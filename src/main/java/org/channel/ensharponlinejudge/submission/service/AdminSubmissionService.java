@@ -62,6 +62,7 @@ public class AdminSubmissionService {
               Submission latest = latestSubmissions.get(user.getId());
               return AdminProjectSubmissionSummaryResponse.builder()
                   .userId(user.getId())
+                  .submissionId(latest != null ? latest.getId() : null)
                   .name(user.getName())
                   .githubId(user.getGithubId())
                   .status(latest != null ? latest.getStatus() : null)
@@ -98,6 +99,7 @@ public class AdminSubmissionService {
                   .name(user != null ? user.getName() : "Unknown")
                   .problemTitle(project != null ? project.getTitle() : "Unknown")
                   .status(s.getStatus())
+                  .score(s.getScore())
                   .memoryUsage(s.getMemoryUsage())
                   .timeUsage(s.getTimeUsage())
                   .build();

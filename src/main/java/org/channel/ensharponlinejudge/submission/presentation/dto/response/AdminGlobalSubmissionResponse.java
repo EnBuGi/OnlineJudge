@@ -15,5 +15,6 @@ public record AdminGlobalSubmissionResponse(
     String name,
     String problemTitle,
     SubmissionStatus status,
+    Integer score,
     Integer memoryUsage,
     Integer timeUsage) {}

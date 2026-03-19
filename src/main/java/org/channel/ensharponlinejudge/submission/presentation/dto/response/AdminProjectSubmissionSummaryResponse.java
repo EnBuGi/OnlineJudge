@@ -10,6 +10,7 @@ import lombok.Builder;
 @Builder
 public record AdminProjectSubmissionSummaryResponse(
     UUID userId,
+    UUID submissionId,
     String name,
     String githubId,
     SubmissionStatus status,

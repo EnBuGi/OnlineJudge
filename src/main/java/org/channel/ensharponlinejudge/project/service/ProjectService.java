@@ -271,12 +271,11 @@ public class ProjectService {
 
     List<TestCaseDto> caseDtos =
         testCases.stream()
-            .filter(tc -> !tc.isHidden()) // Hide hidden test cases
             .map(
                 tc ->
                     TestCaseDto.builder()
                         .id(tc.getId() != null ? tc.getId().toString() : null)
-                        .name(tc.getName())
+                        .name(tc.isHidden() ? "히든 테스트 케이스" : tc.getName())
                         .score(tc.getScore())
                         .isHidden(tc.isHidden())
                         .build())

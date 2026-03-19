@@ -95,8 +95,12 @@ jobs:
             # 이미지 Pull
             docker pull ${{ env.DOCKER_IMAGE }}:dev-${{ github.sha }}
 
-            # 컨테이너 교체 (zero-downtime: 새 컨테이너 올리고 기존 제거)
+            # Redis 가동 확인 (꺼져 있으면 자동으로 킴)
             cd /opt/ensharpoj
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }} \
+              docker compose -f docker-compose.redis.yml up -d
+
+            # 컨테이너 교체 (zero-downtime: 새 컨테이너 올리고 기존 제거)
             docker compose -f docker-compose.dev.yml --env-file dev.env up -d --no-deps api-dev
 
             # 오래된 이미지 정리

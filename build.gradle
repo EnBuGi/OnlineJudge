@@ -45,8 +45,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
     // OCI Object Storage
-    implementation 'com.oracle.oci.sdk:oci-java-sdk-objectstorage:3.54.1'
-    implementation 'com.oracle.oci.sdk:oci-java-sdk-common-httpclient-jersey3:3.54.1' // HTTP Provider 필수
+    implementation 'com.oracle.oci.sdk:oci-java-sdk-objectstorage:3.54.0'
+    implementation 'com.oracle.oci.sdk:oci-java-sdk-common-httpclient-jersey3:3.54.0' // HTTP Provider 필수
 
     // Utilities
     compileOnly 'org.projectlombok:lombok'

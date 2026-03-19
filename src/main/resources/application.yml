@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: dev # Default profile
+    active: dev,local # Default profile
   main:
     allow-bean-definition-overriding: true
 

@@ -1,12 +1,14 @@
 package org.channel.ensharponlinejudge.project.service;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import org.channel.ensharponlinejudge.exception.BusinessException;
 import org.channel.ensharponlinejudge.exception.enums.ProjectErrorCode;
@@ -83,6 +85,8 @@ public class ProjectService {
       projectTestCaseRepository.saveAll(testCases);
     }
 
+    handleTestCodeKey(savedProject, request.testCodeKey());
+
     return savedProject.getId();
   }
 
@@ -126,6 +130,8 @@ public class ProjectService {
               .collect(Collectors.toList());
       projectTestCaseRepository.saveAll(testCases);
     }
+
+    handleTestCodeKey(project, request.testCodeKey());
   }
 
   @Transactional
@@ -296,26 +302,47 @@ public class ProjectService {
         .build();
   }
 
-  public TestCodeParseResponse parseTestCode(MultipartFile file) {
+  public TestCodeParseResponse parseTestCode(UUID userId, MultipartFile file) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new BusinessException(ProjectErrorCode.ERR_FORBIDDEN));
+
+    if (user.getRole() != Role.MENTOR) {
+      throw new BusinessException(ProjectErrorCode.ERR_FORBIDDEN);
+    }
+
     List<String> methodNames = new ArrayList<>();
-    try (Scanner scanner = new Scanner(file.getInputStream())) {
-      StringBuilder content = new StringBuilder();
-      while (scanner.hasNextLine()) {
-        content.append(scanner.nextLine()).append("\n");
-      }
 
-      // JUnit @Test annotation regex
-      Pattern pattern = Pattern.compile("@Test\\s+(?:public\\s+)?void\\s+(\\w+)\\s*\\(");
-      Matcher matcher = pattern.matcher(content.toString());
+    try (ZipInputStream zis = new ZipInputStream(file.getInputStream())) {
+      ZipEntry entry;
+      while ((entry = zis.getNextEntry()) != null) {
+        if (!entry.isDirectory() && entry.getName().endsWith(".java")) {
+          // Read content for parsing
+          StringBuilder content = new StringBuilder();
+          byte[] buffer = new byte[8192];
+          int length;
+          while ((length = zis.read(buffer)) != -1) {
+            content.append(new String(buffer, 0, length));
+          }
 
-      while (matcher.find()) {
-        methodNames.add(matcher.group(1));
+          // JUnit @Test annotation regex
+          Pattern pattern = Pattern.compile("@Test\\s+(?:public\\s+)?void\\s+(\\w+)\\s*\\(");
+          Matcher matcher = pattern.matcher(content.toString());
+
+          while (matcher.find()) {
+            methodNames.add(matcher.group(1));
+          }
+        }
       }
-    } catch (Exception e) {
+    } catch (IOException e) {
       throw new BusinessException(ProjectErrorCode.ERR_FILE_PARSE_FAILED);
     }
 
-    return TestCodeParseResponse.builder().methodNames(methodNames).build();
+    // OCI 임시 경로에 업로드
+    String tempKey = objectStorageService.uploadTempTestCode(file);
+
+    return TestCodeParseResponse.builder().methodNames(methodNames).testCodeKey(tempKey).build();
   }
 
   /**
@@ -339,7 +366,7 @@ public class ProjectService {
             .orElseThrow(() -> new BusinessException(ProjectErrorCode.ERR_PROJECT_NOT_FOUND));
 
     // OCI에 업로드 (내부에서 .zip 및 src/test 디렉토리 검증 수행)
-    String objectKey = projectId.toString() + "/test-code.zip";
+    String objectKey = "projects/" + projectId.toString() + "/test-code.zip";
     objectStorageService.uploadTestCode(file, objectKey);
 
     // PAR GET URL 생성
@@ -349,5 +376,15 @@ public class ProjectService {
     project.updateTestCodeUrl(testCodeUrl);
 
     return TestCodeUploadResponse.builder().testCodeUrl(testCodeUrl).build();
+  }
+
+  private void handleTestCodeKey(Project project, String testCodeKey) {
+    if (testCodeKey != null && !testCodeKey.isBlank()) {
+      String permanentKey = "projects/" + project.getId().toString() + "/test-code.zip";
+      objectStorageService.moveTempToPermanent(testCodeKey, permanentKey);
+
+      String testCodeUrl = objectStorageService.generateGetUrl(permanentKey);
+      project.updateTestCodeUrl(testCodeUrl);
+    }
   }
 }

@@ -50,7 +50,7 @@ public class Submission {
   @Column private Integer score;
 
   @CreationTimestamp
-  @Column(name = "submit_at", nullable = false)
+  @Column(name = "submit_at", nullable = false, updatable = false)
   private LocalDateTime submittedAt;
 
   @Column(name = "time_usage")

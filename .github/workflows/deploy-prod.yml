@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/ensharpOJ-api
+  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/ensharpoj-api
 
 jobs:
   build-and-deploy:

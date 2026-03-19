@@ -1,9 +1,9 @@
 #!/bin/bash
-# 서버 최초 1회 실행 — /opt/ensharpOJ 환경 세팅 스크립트
+# 서버 최초 1회 실행 — /opt/ensharpoj 환경 세팅 스크립트
 
 set -e
 
-echo "=== ensharpOJ 서버 초기 셋업 ==="
+echo "=== ensharpoj 서버 초기 셋업 ==="
 
 # 1. Docker 설치 확인
 if ! command -v docker &> /dev/null; then
@@ -13,22 +13,16 @@ if ! command -v docker &> /dev/null; then
 fi
 
 # 2. 작업 디렉토리 생성
-sudo mkdir -p /opt/ensharpOJ/secrets
-sudo chown -R $USER:$USER /opt/ensharpOJ
+sudo mkdir -p /opt/ensharpoj/secrets
+sudo chown -R $USER:$USER /opt/ensharpoj
 
-# 3. docker-compose 파일 복사 (이미 clone 되어 있다고 가정)
-# cp docker-compose.*.yml /opt/ensharpOJ/
+# 3. 공유 네트워크 생성
+docker network create ensharpoj_shared 2>/dev/null || true
 
-# 4. OCI Private Key 파일 생성 (GitHub Actions가 배포 시 덮어씀 — 아래는 수동 최초 세팅용)
-# echo "OCI_PRIVATE_KEY 내용을 붙여넣고 Ctrl+D로 저장:"
-# cat > /opt/ensharpOJ/secrets/oci_key.pem
-# chmod 600 /opt/ensharpOJ/secrets/oci_key.pem
-
-# 5. 공유 네트워크 생성
-docker network create ensharpOJ_shared 2>/dev/null || true
-
-# 6. Redis 기동 (공유, 최초 1회)
-cd /opt/ensharpOJ
+# 4. Redis 기동 (공유, 최초 1회)
+cd /opt/ensharpoj
+# Note: REDIS_PASSWORD should be set as an env var before running this script
+# Example: export REDIS_PASSWORD=my_password && ./server-setup.sh
 REDIS_PASSWORD=${REDIS_PASSWORD:-} \
   docker compose -f docker-compose.redis.yml up -d
 

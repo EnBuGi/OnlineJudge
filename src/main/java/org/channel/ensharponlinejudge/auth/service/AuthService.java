@@ -1,5 +1,7 @@
 package org.channel.ensharponlinejudge.auth.service;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -158,7 +160,7 @@ public class AuthService {
         + "client_id="
         + githubOAuthClient.getClientId()
         + "&redirect_uri="
-        + redirectUri
+        + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
         + "&state="
         + state
         + "&scope=user:email";

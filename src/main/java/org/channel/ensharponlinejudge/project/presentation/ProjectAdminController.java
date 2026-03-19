@@ -48,8 +48,10 @@ public class ProjectAdminController {
 
   @PostMapping("/test-code/parse")
   public ResponseEntity<TestCodeParseResponse> parseTestCode(
-      @RequestParam("file") MultipartFile file) {
-    return ResponseEntity.ok(projectService.parseTestCode(file));
+      @AuthenticationPrincipal UserDetails userDetails, @RequestParam("file") MultipartFile file) {
+
+    UUID userId = UUID.fromString(userDetails.getUsername());
+    return ResponseEntity.ok(projectService.parseTestCode(userId, file));
   }
 
   @PutMapping("/{id}")

@@ -5,4 +5,4 @@ import java.util.List;
 import lombok.Builder;
 
 @Builder
-public record TestCodeParseResponse(List<String> methodNames) {}
+public record TestCodeParseResponse(List<String> methodNames, String testCodeKey) {}

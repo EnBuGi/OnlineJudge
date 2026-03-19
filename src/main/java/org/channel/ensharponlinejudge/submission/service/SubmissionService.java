@@ -42,9 +42,13 @@ public class SubmissionService {
     List<SubmissionStatus> inProgress =
         List.of(SubmissionStatus.ENQUEUING, SubmissionStatus.QUEUED, SubmissionStatus.PROCESSING);
 
-    projectRepository
+    Project project = projectRepository
         .findById(projectId)
         .orElseThrow(() -> new BusinessException(SubmissionErrorCode.PROJECT_NOT_FOUND));
+
+    if (project.getTestCodeUrl() == null || project.getTestCodeUrl().isBlank()) {
+      throw new BusinessException(SubmissionErrorCode.TEST_CASE_NOT_FOUND);
+    }
 
     userRepository
         .findById(userId)

@@ -14,7 +14,9 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class SubmissionCreatedEventListener {
@@ -48,12 +50,17 @@ public class SubmissionCreatedEventListener {
             project.getType().name());
 
     try {
+      log.info("Enqueuing submission: submissionId={}, userId={}, projectId={}",
+          submission.getId(), submission.getUserId(), submission.getProjectId());
+      
       submissionQueuePublisher.enqueue(submissionJudgeRequest);
 
       // 제출 상태 QUEUED로 변경
       submission.markQueued();
+      log.info("Successfully enqueued submission: submissionId={}", submission.getId());
     } catch (Exception e) {
-
+      log.error("Failed to enqueue submission: submissionId={}, error={}", 
+          submission.getId(), e.getMessage(), e);
       // 제출 상태 SYSTEM_ERROR로 변경
       submission.markSystemError();
     }

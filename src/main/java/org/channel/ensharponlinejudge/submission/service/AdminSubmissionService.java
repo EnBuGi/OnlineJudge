@@ -94,6 +94,7 @@ public class AdminSubmissionService {
 
               return AdminGlobalSubmissionResponse.builder()
                   .submissionId(s.getId())
+                  .projectId(s.getProjectId())
                   .submittedAt(s.getSubmittedAt())
                   .githubId(user != null ? user.getGithubId() : "Unknown")
                   .name(user != null ? user.getName() : "Unknown")

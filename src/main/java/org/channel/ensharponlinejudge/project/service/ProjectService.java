@@ -238,7 +238,7 @@ public class ProjectService {
             .orElseThrow(() -> new BusinessException(ProjectErrorCode.ERR_FORBIDDEN));
 
     return projectRepository.findAll().stream()
-        .filter(project -> project.getGeneration() == user.getGeneration())
+        .filter(project -> project.getGeneration() >= user.getGeneration())
         .map(
             project ->
                 MenteeProjectListResponse.builder()

@@ -1,8 +1,11 @@
 package org.channel.ensharponlinejudge.user.service;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.channel.ensharponlinejudge.user.domain.Role;
+import org.channel.ensharponlinejudge.user.domain.User;
 import org.channel.ensharponlinejudge.user.presentation.dto.AdminUserResponse;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -33,5 +36,14 @@ public class AdminUserService {
                         .profileImageUrl(user.getProfileImageUrl())
                         .build())
             .collect(Collectors.toList());
+  }
+
+  @Transactional
+  public void updateUserRole(UUID userId, Role role) {
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+    user.updateRole(role);
   }
 }

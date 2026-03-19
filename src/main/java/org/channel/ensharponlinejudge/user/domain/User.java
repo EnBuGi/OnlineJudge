@@ -71,4 +71,8 @@ public class User {
         .isDeleted(false)
         .build();
   }
+
+  public void updateRole(Role role) {
+    this.role = role;
+  }
 }

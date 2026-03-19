@@ -101,7 +101,7 @@ jobs:
               docker compose -f docker-compose.redis.yml up -d
 
             # 컨테이너 교체 (zero-downtime: 새 컨테이너 올리고 기존 제거)
-            docker compose -f docker-compose.dev.yml --env-file dev.env up -d --no-deps api-dev
+            docker compose -f docker-compose.dev.yml --env-file dev.env up -d api-dev
 
             # 오래된 이미지 정리
             docker image prune -f

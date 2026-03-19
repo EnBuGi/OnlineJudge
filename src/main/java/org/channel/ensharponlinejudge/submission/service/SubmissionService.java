@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.channel.ensharponlinejudge.exception.BusinessException;
 import org.channel.ensharponlinejudge.exception.enums.SubmissionErrorCode;
+import org.channel.ensharponlinejudge.project.domain.Project;
 import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
 import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionResultDetail;
@@ -16,7 +17,6 @@ import org.channel.ensharponlinejudge.submission.infra.queue.dto.SubmissionCreat
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.MyGlobalSubmissionResponse;
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.SubmissionDetailResponse;
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.SubmissionHistoryResponse;
-import org.channel.ensharponlinejudge.project.domain.Project;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionResultDetailRepository;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;

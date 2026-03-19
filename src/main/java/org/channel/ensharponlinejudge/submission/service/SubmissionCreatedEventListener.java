@@ -9,8 +9,6 @@ import org.channel.ensharponlinejudge.submission.infra.queue.SubmissionQueuePubl
 import org.channel.ensharponlinejudge.submission.infra.queue.dto.SubmissionCreatedEvent;
 import org.channel.ensharponlinejudge.submission.infra.queue.dto.SubmissionJudgeRequest;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
-import org.channel.ensharponlinejudge.user.domain.User;
-import org.channel.ensharponlinejudge.user.repository.UserRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -23,7 +21,6 @@ public class SubmissionCreatedEventListener {
 
   private final SubmissionRepository submissionRepository;
   private final ProjectRepository projectRepository;
-  private final UserRepository userRepository;
   private final SubmissionQueuePublisher submissionQueuePublisher;
 
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -39,11 +36,6 @@ public class SubmissionCreatedEventListener {
             .findById(submission.getProjectId())
             .orElseThrow(() -> new BusinessException(SubmissionErrorCode.PROJECT_NOT_FOUND));
 
-    User user =
-        userRepository
-            .findById(submission.getUserId())
-            .orElseThrow(() -> new BusinessException(SubmissionErrorCode.USER_NOT_FOUND));
-
     SubmissionJudgeRequest submissionJudgeRequest =
         new SubmissionJudgeRequest(
             submission.getId(),
@@ -52,7 +44,9 @@ public class SubmissionCreatedEventListener {
             submission.getRepoUrl(),
             project.getTestCodeUrl(),
             project.getTimeLimit(),
-            project.getMemoryLimit());
+            project.getMemoryLimit(),
+            project.getType().name());
+
     try {
       submissionQueuePublisher.enqueue(submissionJudgeRequest);
 

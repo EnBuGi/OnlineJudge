@@ -37,7 +37,7 @@ public class SubmissionQueuePublisherTest {
 
     SubmissionJudgeRequest submissionJudgeRequest =
         new SubmissionJudgeRequest(
-            submissionId, userId, projectId, repoUrl, testCodeGetUrl, 1000, 512);
+            submissionId, userId, projectId, repoUrl, testCodeGetUrl, 1000, 512, "JAVA");
 
     String json = "{\"fake\":\"json\"}";
     when(objectMapper.writeValueAsString(submissionJudgeRequest)).thenReturn(json);
@@ -66,7 +66,7 @@ public class SubmissionQueuePublisherTest {
 
     SubmissionJudgeRequest submissionJudgeRequest =
         new SubmissionJudgeRequest(
-            submissionId, userId, projectId, repoUrl, testCodeGetUrl, 1000, 512);
+            submissionId, userId, projectId, repoUrl, testCodeGetUrl, 1000, 512, "JAVA");
 
     when(objectMapper.writeValueAsString(submissionJudgeRequest))
         .thenThrow(new JsonProcessingException("boom") {});

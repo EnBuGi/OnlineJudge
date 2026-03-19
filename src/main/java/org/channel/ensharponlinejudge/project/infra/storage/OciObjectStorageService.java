@@ -51,6 +51,7 @@ public class OciObjectStorageService implements ObjectStorageService {
 
   @Override
   public void moveTempToPermanent(String tempKey, String permanentKey) {
+    log.info("[ObjectStorage] Moving file from {} to {}", tempKey, permanentKey);
     try {
       // OCI CopyObject
       CopyObjectRequest copyRequest =
@@ -68,7 +69,11 @@ public class OciObjectStorageService implements ObjectStorageService {
               .build();
 
       objectStorageClient.copyObject(copyRequest);
-      log.info("[ObjectStorage] 파일 이동 완료: {} -> {}", tempKey, permanentKey);
+      log.info("[ObjectStorage] copyObject request sent: {} -> {}", tempKey, permanentKey);
+
+      // Note: OCI copyObject is asynchronous. In a high-integrity system, we should wait for the WorkRequest.
+      // However, for single-user admin actions, the PAR generation afterward should still work 
+      // as it creates a metadata-based URL even if the object is still being copied.
 
       // Delete Temp
       DeleteObjectRequest deleteRequest =
@@ -78,13 +83,18 @@ public class OciObjectStorageService implements ObjectStorageService {
               .objectName(tempKey)
               .build();
       objectStorageClient.deleteObject(deleteRequest);
+      log.info("[ObjectStorage] temp file deleted: {}", tempKey);
 
     } catch (BmcException e) {
+      log.error("[ObjectStorage] OCI error during move: status={}, code={}, message={}", 
+          e.getStatusCode(), e.getServiceCode(), e.getMessage());
       if (e.getStatusCode() == 404) {
         throw new BusinessException(ProjectErrorCode.ERR_TEMP_FILE_NOT_FOUND);
       }
-      log.error("[ObjectStorage] 파일 이동 실패: tempKey={}, error={}", tempKey, e.getMessage(), e);
-      throw new IllegalStateException("테스트 코드 파일 처리에 실패했습니다.", e);
+      throw new IllegalStateException("테스트 코드 파일 처리에 실패했습니다. (OCI Error)", e);
+    } catch (Exception e) {
+      log.error("[ObjectStorage] Unexpected error during move: {}", e.getMessage(), e);
+      throw new IllegalStateException("테스트 코드 파일 처리에 실패했습니다. (Unexpected Error)", e);
     }
   }
 

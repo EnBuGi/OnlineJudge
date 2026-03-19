@@ -59,7 +59,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "docker-compose.prod.yml,docker-compose.redis.yml"
-          target: /opt/ensharpOJ/
+          target: /opt/ensharpoj/
           strip_components: 0
 
       - name: Deploy to Server via SSH
@@ -70,12 +70,12 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             # OCI Private Key 파일 생성 (최초 1회 or 갱신)
-            mkdir -p /opt/ensharpOJ/secrets
-            echo "${{ secrets.OCI_PRIVATE_KEY }}" > /opt/ensharpOJ/secrets/oci_key.pem
-            chmod 600 /opt/ensharpOJ/secrets/oci_key.pem
+            mkdir -p /opt/ensharpoj/secrets
+            echo "${{ secrets.OCI_PRIVATE_KEY }}" > /opt/ensharpoj/secrets/oci_key.pem
+            chmod 600 /opt/ensharpoj/secrets/oci_key.pem
 
             # .env 파일 생성
-            cat > /opt/ensharpOJ/prod.env <<EOF
+            cat > /opt/ensharpoj/prod.env <<EOF
             DOCKER_IMAGE=${{ env.DOCKER_IMAGE }}
             IMAGE_TAG=${{ github.sha }}
             PROD_DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}
@@ -95,8 +95,12 @@ jobs:
             # 이미지 Pull
             docker pull ${{ env.DOCKER_IMAGE }}:prod-${{ github.sha }}
 
+            # Redis 가동 확인 (꺼져 있으면 자동으로 킴)
+            cd /opt/ensharpoj
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }} \
+              docker compose -f docker-compose.redis.yml up -d
+
             # 컨테이너 교체
-            cd /opt/ensharpOJ
             docker compose -f docker-compose.prod.yml --env-file prod.env up -d --no-deps api-prod
 
             # 오래된 이미지 정리

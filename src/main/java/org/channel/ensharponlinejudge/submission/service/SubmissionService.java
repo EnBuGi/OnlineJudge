@@ -25,7 +25,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SubmissionService {
@@ -114,31 +116,46 @@ public class SubmissionService {
 
   @Transactional(readOnly = true)
   public SubmissionDetailResponse getSubmissionDetail(UUID userId, UUID submissionId) {
+    log.info("[SubmissionService] Getting submission detail: submissionId={}, userId={}", submissionId, userId);
+    
     Submission submission =
         submissionRepository
             .findById(submissionId)
-            .orElseThrow(() -> new BusinessException(SubmissionErrorCode.SUBMISSION_NOT_FOUND));
+            .orElseThrow(() -> {
+              log.warn("[SubmissionService] Submission not found: {}", submissionId);
+              return new BusinessException(SubmissionErrorCode.SUBMISSION_NOT_FOUND);
+            });
 
     if (!submission.getUserId().equals(userId)) {
+      log.warn("[SubmissionService] User mismatch: expected={}, actual={}", submission.getUserId(), userId);
       throw new BusinessException(SubmissionErrorCode.SUBMISSION_NOT_FOUND);
     }
 
+    log.debug("[SubmissionService] Fetching result details for submission: {}", submissionId);
     List<SubmissionResultDetail> details =
         submissionResultDetailRepository.findBySubmissionId(submissionId);
+    log.debug("[SubmissionService] Found {} result details", details.size());
 
     List<SubmissionDetailResponse.TestDetailResponse> testDetails =
         details.stream()
             .map(
-                d ->
-                    new SubmissionDetailResponse.TestDetailResponse(
+                d -> {
+                  try {
+                    return new SubmissionDetailResponse.TestDetailResponse(
                         d.isHidden() ? "히든 테스트 케이스" : d.getMethodName(),
                         d.getStatus().name(),
                         (long) d.getDurationMs(),
                         d.isHidden() ? null : d.getMessage(),
                         d.isHidden(),
-                        d.getScore()))
+                        d.getScore());
+                  } catch (Exception e) {
+                    log.error("[SubmissionService] Error mapping result detail: detailId={}, error={}", d.getId(), e.getMessage());
+                    throw e;
+                  }
+                })
             .toList();
 
+    log.info("[SubmissionService] Successfully constructed SubmissionDetailResponse for {}", submissionId);
     return new SubmissionDetailResponse(
         submission.getId(),
         submission.getRepoUrl(),

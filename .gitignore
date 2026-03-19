@@ -47,3 +47,5 @@ out/
 !.github/workflows/*.yml
 !docker-compose*.yml
 !application*.yml
+
+application-local.yml

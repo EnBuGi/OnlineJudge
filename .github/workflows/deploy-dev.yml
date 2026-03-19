@@ -69,12 +69,14 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            # OCI Private Key 파일 생성 (최초 1회 or 갱신)
+            # OCI Private Key 파일 생성 (포맷 유지 및 권한 조절)
             mkdir -p /opt/ensharpoj/secrets
-            echo "${{ secrets.OCI_PRIVATE_KEY }}" > /opt/ensharpoj/secrets/oci_key.pem
-            chmod 600 /opt/ensharpoj/secrets/oci_key.pem
+            cat << 'EOF' > /opt/ensharpoj/secrets/oci_key.pem
+            ${{ secrets.OCI_PRIVATE_KEY }}
+            EOF
+            chmod 644 /opt/ensharpoj/secrets/oci_key.pem
 
-            # .env 파일 생성
+            # 환경 변수 파일 생성
             cat > /opt/ensharpoj/dev.env <<EOF
             DOCKER_IMAGE=${{ env.DOCKER_IMAGE }}
             IMAGE_TAG=${{ github.sha }}

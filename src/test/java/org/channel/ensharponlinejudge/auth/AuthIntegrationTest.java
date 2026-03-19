@@ -18,16 +18,16 @@ import org.channel.ensharponlinejudge.support.ApiTestBase;
 import org.channel.ensharponlinejudge.user.domain.Role;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import io.restassured.http.Cookie;
 import io.restassured.response.Response;
 
 public class AuthIntegrationTest extends ApiTestBase {
 
-  @MockBean private GithubOAuthClient githubOAuthClient;
+  @MockitoBean private GithubOAuthClient githubOAuthClient;
 
   private String getValidState() {
     return given()

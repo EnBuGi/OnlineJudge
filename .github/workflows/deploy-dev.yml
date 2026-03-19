@@ -1,0 +1,109 @@
+name: Deploy to Dev
+
+on:
+  push:
+    branches:
+      - develop
+
+env:
+  DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/ensharpoj-api
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build with Gradle (skip tests)
+        run: ./gradlew bootJar -x test --no-daemon
+
+      - name: Set up QEMU (ARM 크로스 빌드 지원)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/arm64
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:dev-latest
+            ${{ env.DOCKER_IMAGE }}:dev-${{ github.sha }}
+
+      - name: Docker Compose 파일 서버에 복사
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "docker-compose.dev.yml,docker-compose.redis.yml"
+          target: /opt/ensharpoj/
+          strip_components: 0
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            # OCI Private Key 파일 생성 (포맷 유지 및 권한 조절)
+            mkdir -p /opt/ensharpoj/secrets
+            cat << 'EOF' > /opt/ensharpoj/secrets/oci_key.pem
+            ${{ secrets.OCI_PRIVATE_KEY }}
+            EOF
+            chmod 644 /opt/ensharpoj/secrets/oci_key.pem
+
+            # 환경 변수 파일 생성
+            cat > /opt/ensharpoj/dev.env <<EOF
+            DOCKER_IMAGE=${{ env.DOCKER_IMAGE }}
+            IMAGE_TAG=${{ github.sha }}
+            DEV_DB_PASSWORD=${{ secrets.DEV_DB_PASSWORD }}
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+            DEV_JWT_SECRET=${{ secrets.DEV_JWT_SECRET }}
+            DEV_GITHUB_CLIENT_ID=${{ secrets.DEV_GITHUB_CLIENT_ID }}
+            DEV_GITHUB_CLIENT_SECRET=${{ secrets.DEV_GITHUB_CLIENT_SECRET }}
+            DEV_ALLOWED_ORIGIN=${{ secrets.DEV_ALLOWED_ORIGIN }}
+            OCI_TENANT_ID=${{ secrets.OCI_TENANT_ID }}
+            OCI_USER_ID=${{ secrets.OCI_USER_ID }}
+            OCI_FINGERPRINT=${{ secrets.OCI_FINGERPRINT }}
+            OCI_REGION=${{ secrets.OCI_REGION }}
+            OCI_NAMESPACE=${{ secrets.OCI_NAMESPACE }}
+            OCI_TEST_CODE_BUCKET_NAME=${{ secrets.OCI_TEST_CODE_BUCKET_NAME }}
+            EOF
+
+            # 이미지 Pull
+            docker pull ${{ env.DOCKER_IMAGE }}:dev-${{ github.sha }}
+
+            # Redis 가동 확인 (꺼져 있으면 자동으로 킴)
+            cd /opt/ensharpoj
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }} \
+              docker compose -f docker-compose.redis.yml up -d
+
+            # 컨테이너 교체 (zero-downtime: 새 컨테이너 올리고 기존 제거)
+            docker compose -f docker-compose.dev.yml --env-file dev.env up -d api-dev
+
+            # 오래된 이미지 정리
+            docker image prune -f

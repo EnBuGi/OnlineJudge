@@ -1,0 +1,30 @@
+spring:
+  profiles:
+    active: dev,local # Default profile
+  main:
+    allow-bean-definition-overriding: true
+
+jwt:
+  access-expiration: 3600000
+  refresh-expiration: 1209600000
+  cookie:
+    refresh-token-max-age-seconds: 1209600
+    same-site: Strict
+    path: /
+
+security:
+  paths-to-permit:
+    all: "/api/v1/auth/**,/api/v1/invites/**,/api/v1/admin/invites,/v3/api-docs/**,/swagger-ui/**"
+    get: "/api/v1/invites/validate"
+    post: "/api/v1/auth/login/github,/api/v1/auth/signup/github,/api/v1/admin/invites"
+
+oci:
+  object-storage:
+    tenant-id: ${OCI_TENANT_ID}
+    user-id: ${OCI_USER_ID}
+    fingerprint: ${OCI_FINGERPRINT}
+    private-key-path: ${OCI_PRIVATE_KEY_PATH}
+    region: ${OCI_REGION}
+    namespace: ${OCI_NAMESPACE}
+    test-code-bucket-name: ${OCI_TEST_CODE_BUCKET_NAME}
+    par-expiration-hours: 1

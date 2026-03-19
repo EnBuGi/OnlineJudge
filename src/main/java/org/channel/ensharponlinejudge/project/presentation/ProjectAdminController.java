@@ -10,6 +10,8 @@ import org.channel.ensharponlinejudge.project.presentation.dto.request.ProjectUp
 import org.channel.ensharponlinejudge.project.presentation.dto.response.AdminProjectDetailResponse;
 import org.channel.ensharponlinejudge.project.presentation.dto.response.AdminProjectListResponse;
 import org.channel.ensharponlinejudge.project.presentation.dto.response.ProjectCreateResponse;
+import org.channel.ensharponlinejudge.project.presentation.dto.response.TestCodeParseResponse;
+import org.channel.ensharponlinejudge.project.presentation.dto.response.TestCodeUploadResponse;
 import org.channel.ensharponlinejudge.project.service.ProjectService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,7 +23,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
 
@@ -40,6 +44,14 @@ public class ProjectAdminController {
     UUID userId = UUID.fromString(userDetails.getUsername());
     UUID projectId = projectService.createProject(userId, request);
     return ResponseEntity.status(201).body(new ProjectCreateResponse(projectId));
+  }
+
+  @PostMapping("/test-code/parse")
+  public ResponseEntity<TestCodeParseResponse> parseTestCode(
+      @AuthenticationPrincipal UserDetails userDetails, @RequestParam("file") MultipartFile file) {
+
+    UUID userId = UUID.fromString(userDetails.getUsername());
+    return ResponseEntity.ok(projectService.parseTestCode(userId, file));
   }
 
   @PutMapping("/{id}")
@@ -77,6 +89,18 @@ public class ProjectAdminController {
 
     UUID userId = UUID.fromString(userDetails.getUsername());
     AdminProjectDetailResponse response = projectService.getAdminProjectDetail(userId, projectId);
+    return ResponseEntity.ok(response);
+  }
+
+  /** 테스트 코드 .zip 파일을 OCI 오브젝트 스토리지에 업로드합니다. 파일 내부에 src/test 디렉토리가 없으면 400 에러를 반환합니다. */
+  @PostMapping("/{id}/test-code")
+  public ResponseEntity<TestCodeUploadResponse> uploadTestCode(
+      @AuthenticationPrincipal UserDetails userDetails,
+      @PathVariable("id") UUID projectId,
+      @RequestParam("file") MultipartFile file) {
+
+    UUID userId = UUID.fromString(userDetails.getUsername());
+    TestCodeUploadResponse response = projectService.uploadTestCode(userId, projectId, file);
     return ResponseEntity.ok(response);
   }
 }

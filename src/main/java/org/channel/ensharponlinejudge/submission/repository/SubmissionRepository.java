@@ -12,5 +12,11 @@ public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
   boolean existsByUserIdAndProjectIdAndStatusIn(
       UUID userId, UUID projectId, List<SubmissionStatus> statuses);
 
+  List<Submission> findByProjectId(UUID projectId);
+
   List<Submission> findByUserIdAndProjectIdOrderBySubmittedAtDesc(UUID userId, UUID projectId);
+  
+  List<Submission> findByUserIdOrderBySubmittedAtDesc(UUID userId);
+
+  List<Submission> findAllByOrderBySubmittedAtDesc();
 }

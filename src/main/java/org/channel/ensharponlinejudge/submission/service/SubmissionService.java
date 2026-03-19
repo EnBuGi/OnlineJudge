@@ -1,6 +1,8 @@
 package org.channel.ensharponlinejudge.submission.service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -11,8 +13,10 @@ import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionResultDetail;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
 import org.channel.ensharponlinejudge.submission.infra.queue.dto.SubmissionCreatedEvent;
+import org.channel.ensharponlinejudge.submission.presentation.dto.response.MyGlobalSubmissionResponse;
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.SubmissionDetailResponse;
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.SubmissionHistoryResponse;
+import org.channel.ensharponlinejudge.project.domain.Project;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionResultDetailRepository;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
@@ -124,8 +128,8 @@ public class SubmissionService {
                 d ->
                     new SubmissionDetailResponse.TestDetailResponse(
                         d.isHidden() ? "히든 테스트 케이스" : d.getMethodName(),
-                        d.getStatus(),
-                        d.getDurationMs(),
+                        d.getStatus().name(),
+                        (long) d.getDurationMs(),
                         d.isHidden() ? null : d.getMessage(),
                         d.isHidden(),
                         d.getScore()))
@@ -140,5 +144,34 @@ public class SubmissionService {
         submission.getPassedTests(),
         submission.getSubmittedAt(),
         testDetails);
+  }
+
+  @Transactional(readOnly = true)
+  public List<MyGlobalSubmissionResponse> getMyGlobalSubmissions(UUID userId) {
+    List<Submission> submissions = submissionRepository.findByUserIdOrderBySubmittedAtDesc(userId);
+
+    Set<UUID> projectIds =
+        submissions.stream().map(Submission::getProjectId).collect(Collectors.toSet());
+
+    Map<UUID, Project> projectMap =
+        projectRepository.findAllById(projectIds).stream()
+            .collect(Collectors.toMap(Project::getId, p -> p));
+
+    return submissions.stream()
+        .map(
+            s -> {
+              Project project = projectMap.get(s.getProjectId());
+              return MyGlobalSubmissionResponse.builder()
+                  .submissionId(s.getId())
+                  .projectId(s.getProjectId())
+                  .submittedAt(s.getSubmittedAt())
+                  .problemTitle(project != null ? project.getTitle() : "Unknown")
+                  .status(s.getStatus())
+                  .score(s.getScore())
+                  .memoryUsage(s.getMemoryUsage())
+                  .timeUsage(s.getTimeUsage())
+                  .build();
+            })
+        .collect(Collectors.toList());
   }
 }

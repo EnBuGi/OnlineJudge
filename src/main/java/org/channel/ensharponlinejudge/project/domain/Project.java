@@ -58,7 +58,7 @@ public class Project {
   private Integer memoryLimit;
 
   @CreationTimestamp
-  @Column(name = "created_at", nullable = false)
+  @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
   @UpdateTimestamp
@@ -133,5 +133,10 @@ public class Project {
     this.testCodeUrl = testCodeUrl;
     this.timeLimit = timeLimit;
     this.memoryLimit = memoryLimit;
+  }
+
+  /** OCI 오브젝트 스토리지에 업로드된 테스트 코드의 PAR URL을 저장합니다. */
+  public void updateTestCodeUrl(String testCodeUrl) {
+    this.testCodeUrl = testCodeUrl;
   }
 }

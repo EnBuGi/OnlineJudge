@@ -9,6 +9,7 @@ import org.channel.ensharponlinejudge.project.domain.ProjectTestCase;
 import org.channel.ensharponlinejudge.project.repository.ProjectTestCaseRepository;
 import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionResultDetail;
+import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
 import org.channel.ensharponlinejudge.submission.infra.queue.dto.ScoringResultMessage;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionResultDetailRepository;
@@ -57,8 +58,7 @@ public class ScoringResultConsumer implements MessageListener {
       //  score: (passedTests / totalTests) * 100
       int score = 0;
       if (result.getTotalTests() > 0) {
-        score =
-            (int) Math.round((double) result.getPassedTests() / result.getTotalTests() * 100);
+        score = (int) Math.round((double) result.getPassedTests() / result.getTotalTests() * 100);
       }
 
       submission.markCompleted(score, result.getTotalTests(), result.getPassedTests());
@@ -76,11 +76,11 @@ public class ScoringResultConsumer implements MessageListener {
                       return SubmissionResultDetail.builder()
                           .submissionId(submissionId)
                           .methodName(d.getMethodName())
-                          .status(d.getStatus())
-                          .durationMs(d.getDurationMs())
+                          .status(SubmissionStatus.valueOf(d.getStatus()))
+                          .durationMs((int) d.getDurationMs())
                           .message(d.getMessage())
                           .isHidden(hidden)
-                          .score(testScore)
+                          .score(testScore != null ? testScore : 0)
                           .build();
                     })
                 .toList();

@@ -13,7 +13,6 @@ import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
 import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionResultDetail;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
-import org.channel.ensharponlinejudge.submission.domain.TestStatus;
 import org.channel.ensharponlinejudge.submission.infra.queue.dto.SubmissionCreatedEvent;
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.MyGlobalSubmissionResponse;
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.SubmissionDetailResponse;

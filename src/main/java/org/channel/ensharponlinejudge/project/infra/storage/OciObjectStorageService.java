@@ -17,9 +17,10 @@ import com.oracle.bmc.objectstorage.ObjectStorageClient;
 import com.oracle.bmc.objectstorage.model.CreatePreauthenticatedRequestDetails;
 import com.oracle.bmc.objectstorage.requests.CopyObjectRequest;
 import com.oracle.bmc.objectstorage.requests.CreatePreauthenticatedRequestRequest;
-import com.oracle.bmc.objectstorage.requests.DeleteObjectRequest;
 import com.oracle.bmc.objectstorage.requests.PutObjectRequest;
 import com.oracle.bmc.objectstorage.responses.CreatePreauthenticatedRequestResponse;
+import com.oracle.bmc.objectstorage.requests.HeadObjectRequest;
+import com.oracle.bmc.objectstorage.responses.CopyObjectResponse;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -68,22 +69,40 @@ public class OciObjectStorageService implements ObjectStorageService {
                       .build())
               .build();
 
-      objectStorageClient.copyObject(copyRequest);
-      log.info("[ObjectStorage] copyObject request sent: {} -> {}", tempKey, permanentKey);
+      CopyObjectResponse copyResponse = objectStorageClient.copyObject(copyRequest);
+      log.info("[ObjectStorage] copyObject request sent: {} -> {}, WorkRequest: {}", 
+          tempKey, permanentKey, copyResponse.getOpcWorkRequestId());
 
-      // Note: OCI copyObject is asynchronous. In a high-integrity system, we should wait for the WorkRequest.
-      // However, for single-user admin actions, the PAR generation afterward should still work 
-      // as it creates a metadata-based URL even if the object is still being copied.
+      // Wait for object to be available in destination
+      HeadObjectRequest headRequest = HeadObjectRequest.builder()
+          .namespaceName(ociProperties.getNamespace())
+          .bucketName(ociProperties.getTestCodeBucketName())
+          .objectName(permanentKey)
+          .build();
 
-      // Delete Temp
-      DeleteObjectRequest deleteRequest =
-          DeleteObjectRequest.builder()
-              .namespaceName(ociProperties.getNamespace())
-              .bucketName(ociProperties.getTestCodeBucketName())
-              .objectName(tempKey)
-              .build();
-      objectStorageClient.deleteObject(deleteRequest);
-      log.info("[ObjectStorage] temp file deleted: {}", tempKey);
+      boolean identified = false;
+      for (int i = 0; i < 10; i++) {
+        try {
+          objectStorageClient.headObject(headRequest);
+          log.info("[ObjectStorage] Object verified in destination: {} (attempt {})", permanentKey, i + 1);
+          identified = true;
+          break;
+        } catch (BmcException e) {
+          if (e.getStatusCode() == 404) {
+            log.info("[ObjectStorage] Waiting for object to appear... {} (attempt {})", permanentKey, i + 1);
+            Thread.sleep(1000);
+          } else {
+            throw e;
+          }
+        }
+      }
+
+      if (!identified) {
+        log.warn("[ObjectStorage] Object not found in destination after 10s wait: {}", permanentKey);
+        // We proceed anyway, but at least we have logs.
+      }
+
+      log.info("[ObjectStorage] moveTempToPermanent completed (source file kept for safety): {}", permanentKey);
 
     } catch (BmcException e) {
       log.error("[ObjectStorage] OCI error during move: status={}, code={}, message={}", 

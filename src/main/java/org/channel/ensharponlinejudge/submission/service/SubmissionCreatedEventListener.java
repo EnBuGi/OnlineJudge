@@ -6,6 +6,7 @@ import org.channel.ensharponlinejudge.project.domain.Project;
 import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
 import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.infra.queue.SubmissionQueuePublisher;
+import org.channel.ensharponlinejudge.project.infra.storage.ObjectStorageService;
 import org.channel.ensharponlinejudge.submission.infra.queue.dto.SubmissionCreatedEvent;
 import org.channel.ensharponlinejudge.submission.infra.queue.dto.SubmissionJudgeRequest;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
@@ -24,6 +25,7 @@ public class SubmissionCreatedEventListener {
   private final SubmissionRepository submissionRepository;
   private final ProjectRepository projectRepository;
   private final SubmissionQueuePublisher submissionQueuePublisher;
+  private final ObjectStorageService objectStorageService;
 
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   public void onSubmissionQueued(SubmissionCreatedEvent submissionCreatedEvent) {
@@ -38,13 +40,18 @@ public class SubmissionCreatedEventListener {
             .findById(submission.getProjectId())
             .orElseThrow(() -> new BusinessException(SubmissionErrorCode.PROJECT_NOT_FOUND));
 
+    // Generate fresh PAR URL for test code (to avoid expiration 404)
+    String objectKey = "projects/" + project.getId().toString() + "/test-code.zip";
+    String freshTestCodeUrl = objectStorageService.generateGetUrl(objectKey);
+    log.info("[SubmissionCreatedEventListener] Generated fresh testCodeUrl: {}", freshTestCodeUrl);
+
     SubmissionJudgeRequest submissionJudgeRequest =
         new SubmissionJudgeRequest(
             submission.getId(),
             submission.getUserId(),
             submission.getProjectId(),
             submission.getRepoUrl(),
-            project.getTestCodeUrl(),
+            freshTestCodeUrl,
             project.getTimeLimit(),
             project.getMemoryLimit(),
             project.getType().name());

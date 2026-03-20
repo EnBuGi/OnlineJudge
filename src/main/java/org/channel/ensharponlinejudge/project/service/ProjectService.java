@@ -109,6 +109,7 @@ public class ProjectService {
             .orElseThrow(() -> new BusinessException(ProjectErrorCode.ERR_PROJECT_NOT_FOUND));
 
     project.update(
+        request.generation(),
         request.type(),
         request.title(),
         request.description(),

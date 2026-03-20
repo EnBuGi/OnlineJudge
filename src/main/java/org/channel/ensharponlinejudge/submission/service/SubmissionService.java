@@ -95,6 +95,7 @@ public class SubmissionService {
                 submission.getRepoUrl(),
                 submission.getStatus(),
                 submission.getScore(),
+                "Java",
                 submission.getSubmittedAt()));
   }
 
@@ -205,6 +206,7 @@ public class SubmissionService {
                       .projectId(s.getProjectId())
                       .submittedAt(s.getSubmittedAt())
                       .problemTitle(project != null ? project.getTitle() : "Unknown")
+                      .language("Java")
                       .status(s.getStatus())
                       .score(s.getScore())
                       .memoryUsage(s.getMemoryUsage())

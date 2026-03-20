@@ -15,6 +15,7 @@ public record AdminGlobalSubmissionResponse(
     String githubId,
     String name,
     String problemTitle,
+    String language,
     SubmissionStatus status,
     Integer score,
     Integer memoryUsage,

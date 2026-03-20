@@ -9,7 +9,7 @@ import org.channel.ensharponlinejudge.project.domain.ProjectTestCase;
 import org.channel.ensharponlinejudge.project.repository.ProjectTestCaseRepository;
 import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionResultDetail;
-import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
+import org.channel.ensharponlinejudge.submission.domain.TestStatus;
 import org.channel.ensharponlinejudge.submission.infra.queue.dto.ScoringResultMessage;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionResultDetailRepository;
@@ -76,7 +76,7 @@ public class ScoringResultConsumer implements MessageListener {
                       return SubmissionResultDetail.builder()
                           .submissionId(submissionId)
                           .methodName(d.getMethodName())
-                          .status(SubmissionStatus.valueOf(d.getStatus()))
+                          .status(TestStatus.valueOf(d.getStatus()))
                           .durationMs((int) d.getDurationMs())
                           .message(d.getMessage())
                           .isHidden(hidden)

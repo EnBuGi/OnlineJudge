@@ -21,6 +21,9 @@ import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository
 import org.channel.ensharponlinejudge.submission.repository.SubmissionResultDetailRepository;
 import org.channel.ensharponlinejudge.user.domain.User;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -73,8 +76,8 @@ public class AdminSubmissionService {
         .collect(Collectors.toList());
   }
 
-  public List<AdminGlobalSubmissionResponse> getGlobalSubmissions() {
-    List<Submission> submissions = submissionRepository.findAllByOrderBySubmittedAtDesc();
+  public Page<AdminGlobalSubmissionResponse> getGlobalSubmissions(Pageable pageable) {
+    Page<Submission> submissions = submissionRepository.findAll(pageable);
 
     Set<UUID> userIds = submissions.stream().map(Submission::getUserId).collect(Collectors.toSet());
     Set<UUID> projectIds =
@@ -86,26 +89,29 @@ public class AdminSubmissionService {
         projectRepository.findAllById(projectIds).stream()
             .collect(Collectors.toMap(Project::getId, p -> p));
 
-    return submissions.stream()
-        .map(
-            s -> {
-              User user = userMap.get(s.getUserId());
-              Project project = projectMap.get(s.getProjectId());
+    List<AdminGlobalSubmissionResponse> content =
+        submissions.stream()
+            .map(
+                s -> {
+                  User user = userMap.get(s.getUserId());
+                  Project project = projectMap.get(s.getProjectId());
 
-              return AdminGlobalSubmissionResponse.builder()
-                  .submissionId(s.getId())
-                  .projectId(s.getProjectId())
-                  .submittedAt(s.getSubmittedAt())
-                  .githubId(user != null ? user.getGithubId() : "Unknown")
-                  .name(user != null ? user.getName() : "Unknown")
-                  .problemTitle(project != null ? project.getTitle() : "Unknown")
-                  .status(s.getStatus())
-                  .score(s.getScore())
-                  .memoryUsage(s.getMemoryUsage())
-                  .timeUsage(s.getTimeUsage())
-                  .build();
-            })
-        .collect(Collectors.toList());
+                  return AdminGlobalSubmissionResponse.builder()
+                      .submissionId(s.getId())
+                      .projectId(s.getProjectId())
+                      .submittedAt(s.getSubmittedAt())
+                      .githubId(user != null ? user.getGithubId() : "Unknown")
+                      .name(user != null ? user.getName() : "Unknown")
+                      .problemTitle(project != null ? project.getTitle() : "Unknown")
+                      .status(s.getStatus())
+                      .score(s.getScore())
+                      .memoryUsage(s.getMemoryUsage())
+                      .timeUsage(s.getTimeUsage())
+                      .build();
+                })
+            .collect(Collectors.toList());
+
+    return new PageImpl<>(content, pageable, submissions.getTotalElements());
   }
 
   public AdminSubmissionDetailResponse getAdminSubmissionDetail(UUID submissionId) {
@@ -151,23 +157,22 @@ public class AdminSubmissionService {
         .build();
   }
 
-  public List<AdminUserProjectSubmissionResponse> getUserProjectSubmissions(
-      UUID projectId, UUID userId) {
-    List<Submission> submissions =
-        submissionRepository.findByUserIdAndProjectIdOrderBySubmittedAtDesc(userId, projectId);
+  public Page<AdminUserProjectSubmissionResponse> getUserProjectSubmissions(
+      UUID projectId, UUID userId, Pageable pageable) {
+    Page<Submission> submissions =
+        submissionRepository.findByUserIdAndProjectIdOrderBySubmittedAtDesc(
+            userId, projectId, pageable);
 
-    return submissions.stream()
-        .map(
-            s ->
-                AdminUserProjectSubmissionResponse.builder()
-                    .submissionId(s.getId())
-                    .status(s.getStatus())
-                    .score(s.getScore())
-                    .memoryUsage(s.getMemoryUsage())
-                    .timeExecution(s.getTimeUsage())
-                    .language("Java")
-                    .submittedAt(s.getSubmittedAt())
-                    .build())
-        .collect(Collectors.toList());
+    return submissions.map(
+        s ->
+            AdminUserProjectSubmissionResponse.builder()
+                .submissionId(s.getId())
+                .status(s.getStatus())
+                .score(s.getScore())
+                .memoryUsage(s.getMemoryUsage())
+                .timeExecution(s.getTimeUsage())
+                .language("Java")
+                .submittedAt(s.getSubmittedAt())
+                .build());
   }
 }

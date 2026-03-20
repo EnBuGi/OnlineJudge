@@ -381,19 +381,29 @@ public class ProjectService {
 
   private void handleTestCodeKey(Project project, String testCodeKey) {
     if (testCodeKey != null && !testCodeKey.isBlank()) {
-      log.info("[ProjectService] Handling testCodeKey for project {}: tempKey={}", project.getId(), testCodeKey);
+      log.info(
+          "[ProjectService] Handling testCodeKey for project {}: tempKey={}",
+          project.getId(),
+          testCodeKey);
       String permanentKey = "projects/" + project.getId().toString() + "/test-code.zip";
-      
+
       try {
         objectStorageService.moveTempToPermanent(testCodeKey, permanentKey);
         log.info("[ProjectService] File moved successfully for project {}", project.getId());
 
         String testCodeUrl = objectStorageService.generateGetUrl(permanentKey);
-        log.info("[ProjectService] Generated testCodeUrl for project {}: {}", project.getId(), testCodeUrl);
-        
+        log.info(
+            "[ProjectService] Generated testCodeUrl for project {}: {}",
+            project.getId(),
+            testCodeUrl);
+
         project.updateTestCodeUrl(testCodeUrl);
       } catch (Exception e) {
-        log.error("[ProjectService] Failed to handle testCodeKey for project {}: error={}", project.getId(), e.getMessage(), e);
+        log.error(
+            "[ProjectService] Failed to handle testCodeKey for project {}: error={}",
+            project.getId(),
+            e.getMessage(),
+            e);
         throw e;
       }
     } else {

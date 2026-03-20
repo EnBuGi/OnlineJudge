@@ -3,10 +3,10 @@ package org.channel.ensharponlinejudge.submission.service;
 import org.channel.ensharponlinejudge.exception.BusinessException;
 import org.channel.ensharponlinejudge.exception.enums.SubmissionErrorCode;
 import org.channel.ensharponlinejudge.project.domain.Project;
+import org.channel.ensharponlinejudge.project.infra.storage.ObjectStorageService;
 import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
 import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.infra.queue.SubmissionQueuePublisher;
-import org.channel.ensharponlinejudge.project.infra.storage.ObjectStorageService;
 import org.channel.ensharponlinejudge.submission.infra.queue.dto.SubmissionCreatedEvent;
 import org.channel.ensharponlinejudge.submission.infra.queue.dto.SubmissionJudgeRequest;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
@@ -57,17 +57,23 @@ public class SubmissionCreatedEventListener {
             project.getType().name());
 
     try {
-      log.info("Enqueuing submission: submissionId={}, userId={}, projectId={}",
-          submission.getId(), submission.getUserId(), submission.getProjectId());
-      
+      log.info(
+          "Enqueuing submission: submissionId={}, userId={}, projectId={}",
+          submission.getId(),
+          submission.getUserId(),
+          submission.getProjectId());
+
       submissionQueuePublisher.enqueue(submissionJudgeRequest);
 
       // 제출 상태 QUEUED로 변경
       submission.markQueued();
       log.info("Successfully enqueued submission: submissionId={}", submission.getId());
     } catch (Exception e) {
-      log.error("Failed to enqueue submission: submissionId={}, error={}", 
-          submission.getId(), e.getMessage(), e);
+      log.error(
+          "Failed to enqueue submission: submissionId={}, error={}",
+          submission.getId(),
+          e.getMessage(),
+          e);
       // 제출 상태 SYSTEM_ERROR로 변경
       submission.markSystemError();
     }

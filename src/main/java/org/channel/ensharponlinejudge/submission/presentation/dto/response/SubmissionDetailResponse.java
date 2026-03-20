@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
+import org.channel.ensharponlinejudge.submission.domain.TestStatus;
 
 public record SubmissionDetailResponse(
     UUID submissionId,
@@ -18,8 +19,8 @@ public record SubmissionDetailResponse(
 
   public record TestDetailResponse(
       String methodName,
-      String status,
-      Long durationMs,
+      TestStatus status,
+      Integer durationMs,
       String message,
       boolean isHidden,
       Integer score) {}

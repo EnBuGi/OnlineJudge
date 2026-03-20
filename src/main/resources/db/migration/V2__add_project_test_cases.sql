@@ -1,4 +1,4 @@
-CREATE TABLE project_test_cases (
+CREATE TABLE IF NOT EXISTS project_test_cases (
     id VARCHAR(36) NOT NULL,
     project_id VARCHAR(36) NOT NULL,
     name VARCHAR(255) NOT NULL,

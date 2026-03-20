@@ -13,9 +13,12 @@ import org.channel.ensharponlinejudge.submission.presentation.dto.request.Submit
 import org.channel.ensharponlinejudge.submission.service.SubmissionService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -82,14 +85,23 @@ public class SubmissionControllerTest {
   void Given정상요청시_When제출기록을조회하면_Expect200을반환한다() throws Exception {
     UUID projectId = UUID.randomUUID();
 
-    org.mockito.BDDMockito.given(submissionService.getSubmissionHistory(userId, projectId))
-        .willReturn(List.of());
+    org.mockito.BDDMockito.given(
+            submissionService.getSubmissionHistory(
+                ArgumentMatchers.eq(userId),
+                ArgumentMatchers.eq(projectId),
+                ArgumentMatchers.any(Pageable.class)))
+        .willReturn(new PageImpl<>(List.of()));
 
     mockMvc
         .perform(get("/api/v1/projects/" + projectId + "/submissions"))
         .andDo(print())
         .andExpect(status().isOk());
 
-    then(submissionService).should().getSubmissionHistory(userId, projectId);
+    then(submissionService)
+        .should()
+        .getSubmissionHistory(
+            ArgumentMatchers.eq(userId),
+            ArgumentMatchers.eq(projectId),
+            ArgumentMatchers.any(Pageable.class));
   }
 }

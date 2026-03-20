@@ -115,6 +115,7 @@ public class Project {
   }
 
   public void update(
+      int generation,
       ProjectType type,
       String title,
       String description,
@@ -124,6 +125,7 @@ public class Project {
       String testCodeUrl,
       Integer timeLimit,
       Integer memoryLimit) {
+    this.generation = generation;
     this.type = type;
     this.title = title;
     this.description = description;

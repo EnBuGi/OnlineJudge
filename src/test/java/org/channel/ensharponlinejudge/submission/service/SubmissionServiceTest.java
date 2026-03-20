@@ -31,6 +31,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 public class SubmissionServiceTest {
@@ -187,6 +191,7 @@ public class SubmissionServiceTest {
   void Given제출기록이있을때_When조회를_요청하면_Expect리스트가_반환된다() {
     UUID userId = UUID.randomUUID();
     UUID projectId = UUID.randomUUID();
+    Pageable pageable = PageRequest.of(0, 10);
 
     givenProjectAndUserExist(projectId, userId);
 
@@ -197,15 +202,17 @@ public class SubmissionServiceTest {
     given(mockSubmission.getScore()).willReturn(100);
     given(mockSubmission.getSubmittedAt()).willReturn(LocalDateTime.now());
 
-    given(submissionRepository.findByUserIdAndProjectIdOrderBySubmittedAtDesc(userId, projectId))
-        .willReturn(List.of(mockSubmission));
+    given(
+            submissionRepository.findByUserIdAndProjectIdOrderBySubmittedAtDesc(
+                userId, projectId, pageable))
+        .willReturn(new PageImpl<>(List.of(mockSubmission)));
 
-    List<SubmissionHistoryResponse> result =
-        submissionService.getSubmissionHistory(userId, projectId);
+    Page<SubmissionHistoryResponse> result =
+        submissionService.getSubmissionHistory(userId, projectId, pageable);
 
-    assertThat(result.size()).isEqualTo(1);
-    assertThat(result.get(0).status()).isEqualTo(SubmissionStatus.COMPLETED);
-    assertThat(result.get(0).score()).isEqualTo(100);
+    assertThat(result.getTotalElements()).isEqualTo(1);
+    assertThat(result.getContent().get(0).status()).isEqualTo(SubmissionStatus.COMPLETED);
+    assertThat(result.getContent().get(0).score()).isEqualTo(100);
   }
 
   // 프로젝트 존재 기본 전제

@@ -21,11 +21,16 @@ import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository
 import org.channel.ensharponlinejudge.submission.repository.SubmissionResultDetailRepository;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SubmissionService {
@@ -42,9 +47,14 @@ public class SubmissionService {
     List<SubmissionStatus> inProgress =
         List.of(SubmissionStatus.ENQUEUING, SubmissionStatus.QUEUED, SubmissionStatus.PROCESSING);
 
-    projectRepository
-        .findById(projectId)
-        .orElseThrow(() -> new BusinessException(SubmissionErrorCode.PROJECT_NOT_FOUND));
+    Project project =
+        projectRepository
+            .findById(projectId)
+            .orElseThrow(() -> new BusinessException(SubmissionErrorCode.PROJECT_NOT_FOUND));
+
+    if (project.getTestCodeUrl() == null || project.getTestCodeUrl().isBlank()) {
+      throw new BusinessException(SubmissionErrorCode.TEST_CASE_NOT_FOUND);
+    }
 
     userRepository
         .findById(userId)
@@ -64,7 +74,8 @@ public class SubmissionService {
   }
 
   @Transactional(readOnly = true)
-  public List<SubmissionHistoryResponse> getSubmissionHistory(UUID userId, UUID projectId) {
+  public Page<SubmissionHistoryResponse> getSubmissionHistory(
+      UUID userId, UUID projectId, Pageable pageable) {
     projectRepository
         .findById(projectId)
         .orElseThrow(() -> new BusinessException(SubmissionErrorCode.PROJECT_NOT_FOUND));
@@ -73,18 +84,18 @@ public class SubmissionService {
         .findById(userId)
         .orElseThrow(() -> new BusinessException(SubmissionErrorCode.USER_NOT_FOUND));
 
-    return submissionRepository
-        .findByUserIdAndProjectIdOrderBySubmittedAtDesc(userId, projectId)
-        .stream()
-        .map(
-            submission ->
-                new SubmissionHistoryResponse(
-                    submission.getId(),
-                    submission.getRepoUrl(),
-                    submission.getStatus(),
-                    submission.getScore(),
-                    submission.getSubmittedAt()))
-        .collect(Collectors.toList());
+    Page<Submission> submissions =
+        submissionRepository.findByUserIdAndProjectIdOrderBySubmittedAtDesc(
+            userId, projectId, pageable);
+
+    return submissions.map(
+        submission ->
+            new SubmissionHistoryResponse(
+                submission.getId(),
+                submission.getRepoUrl(),
+                submission.getStatus(),
+                submission.getScore(),
+                submission.getSubmittedAt()));
   }
 
   @Transactional
@@ -110,31 +121,58 @@ public class SubmissionService {
 
   @Transactional(readOnly = true)
   public SubmissionDetailResponse getSubmissionDetail(UUID userId, UUID submissionId) {
+    log.info(
+        "[SubmissionService] Getting submission detail: submissionId={}, userId={}",
+        submissionId,
+        userId);
+
     Submission submission =
         submissionRepository
             .findById(submissionId)
-            .orElseThrow(() -> new BusinessException(SubmissionErrorCode.SUBMISSION_NOT_FOUND));
+            .orElseThrow(
+                () -> {
+                  log.warn("[SubmissionService] Submission not found: {}", submissionId);
+                  return new BusinessException(SubmissionErrorCode.SUBMISSION_NOT_FOUND);
+                });
 
     if (!submission.getUserId().equals(userId)) {
+      log.warn(
+          "[SubmissionService] User mismatch: expected={}, actual={}",
+          submission.getUserId(),
+          userId);
       throw new BusinessException(SubmissionErrorCode.SUBMISSION_NOT_FOUND);
     }
 
+    log.debug("[SubmissionService] Fetching result details for submission: {}", submissionId);
     List<SubmissionResultDetail> details =
         submissionResultDetailRepository.findBySubmissionId(submissionId);
+    log.debug("[SubmissionService] Found {} result details", details.size());
 
     List<SubmissionDetailResponse.TestDetailResponse> testDetails =
         details.stream()
             .map(
-                d ->
-                    new SubmissionDetailResponse.TestDetailResponse(
+                d -> {
+                  try {
+                    return new SubmissionDetailResponse.TestDetailResponse(
                         d.isHidden() ? "히든 테스트 케이스" : d.getMethodName(),
-                        d.getStatus().name(),
-                        (long) d.getDurationMs(),
+                        d.getStatus(),
+                        d.getDurationMs(),
                         d.isHidden() ? null : d.getMessage(),
                         d.isHidden(),
-                        d.getScore()))
+                        d.getScore());
+                  } catch (Exception e) {
+                    log.error(
+                        "[SubmissionService] Error mapping result detail: detailId={}, error={}",
+                        d.getId(),
+                        e.getMessage());
+                    throw e;
+                  }
+                })
             .toList();
 
+    log.info(
+        "[SubmissionService] Successfully constructed SubmissionDetailResponse for {}",
+        submissionId);
     return new SubmissionDetailResponse(
         submission.getId(),
         submission.getRepoUrl(),
@@ -147,8 +185,8 @@ public class SubmissionService {
   }
 
   @Transactional(readOnly = true)
-  public List<MyGlobalSubmissionResponse> getMyGlobalSubmissions(UUID userId) {
-    List<Submission> submissions = submissionRepository.findByUserIdOrderBySubmittedAtDesc(userId);
+  public Page<MyGlobalSubmissionResponse> getMyGlobalSubmissions(UUID userId, Pageable pageable) {
+    Page<Submission> submissions = submissionRepository.findByUserId(userId, pageable);
 
     Set<UUID> projectIds =
         submissions.stream().map(Submission::getProjectId).collect(Collectors.toSet());
@@ -157,21 +195,24 @@ public class SubmissionService {
         projectRepository.findAllById(projectIds).stream()
             .collect(Collectors.toMap(Project::getId, p -> p));
 
-    return submissions.stream()
-        .map(
-            s -> {
-              Project project = projectMap.get(s.getProjectId());
-              return MyGlobalSubmissionResponse.builder()
-                  .submissionId(s.getId())
-                  .projectId(s.getProjectId())
-                  .submittedAt(s.getSubmittedAt())
-                  .problemTitle(project != null ? project.getTitle() : "Unknown")
-                  .status(s.getStatus())
-                  .score(s.getScore())
-                  .memoryUsage(s.getMemoryUsage())
-                  .timeUsage(s.getTimeUsage())
-                  .build();
-            })
-        .collect(Collectors.toList());
+    List<MyGlobalSubmissionResponse> content =
+        submissions.stream()
+            .map(
+                s -> {
+                  Project project = projectMap.get(s.getProjectId());
+                  return MyGlobalSubmissionResponse.builder()
+                      .submissionId(s.getId())
+                      .projectId(s.getProjectId())
+                      .submittedAt(s.getSubmittedAt())
+                      .problemTitle(project != null ? project.getTitle() : "Unknown")
+                      .status(s.getStatus())
+                      .score(s.getScore())
+                      .memoryUsage(s.getMemoryUsage())
+                      .timeUsage(s.getTimeUsage())
+                      .build();
+                })
+            .collect(Collectors.toList());
+
+    return new PageImpl<>(content, pageable, submissions.getTotalElements());
   }
 }

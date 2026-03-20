@@ -35,7 +35,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProjectService {
@@ -107,6 +109,7 @@ public class ProjectService {
             .orElseThrow(() -> new BusinessException(ProjectErrorCode.ERR_PROJECT_NOT_FOUND));
 
     project.update(
+        request.generation(),
         request.type(),
         request.title(),
         request.description(),
@@ -379,11 +382,33 @@ public class ProjectService {
 
   private void handleTestCodeKey(Project project, String testCodeKey) {
     if (testCodeKey != null && !testCodeKey.isBlank()) {
+      log.info(
+          "[ProjectService] Handling testCodeKey for project {}: tempKey={}",
+          project.getId(),
+          testCodeKey);
       String permanentKey = "projects/" + project.getId().toString() + "/test-code.zip";
-      objectStorageService.moveTempToPermanent(testCodeKey, permanentKey);
 
-      String testCodeUrl = objectStorageService.generateGetUrl(permanentKey);
-      project.updateTestCodeUrl(testCodeUrl);
+      try {
+        objectStorageService.moveTempToPermanent(testCodeKey, permanentKey);
+        log.info("[ProjectService] File moved successfully for project {}", project.getId());
+
+        String testCodeUrl = objectStorageService.generateGetUrl(permanentKey);
+        log.info(
+            "[ProjectService] Generated testCodeUrl for project {}: {}",
+            project.getId(),
+            testCodeUrl);
+
+        project.updateTestCodeUrl(testCodeUrl);
+      } catch (Exception e) {
+        log.error(
+            "[ProjectService] Failed to handle testCodeKey for project {}: error={}",
+            project.getId(),
+            e.getMessage(),
+            e);
+        throw e;
+      }
+    } else {
+      log.debug("[ProjectService] No testCodeKey provided for project {}", project.getId());
     }
   }
 }

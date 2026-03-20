@@ -39,7 +39,7 @@ public class SubmissionResultDetail {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
-  private SubmissionStatus status;
+  private TestStatus status;
 
   @Column(name = "duration_ms")
   private int durationMs;
@@ -57,7 +57,7 @@ public class SubmissionResultDetail {
   public SubmissionResultDetail(
       UUID submissionId,
       String methodName,
-      SubmissionStatus status,
+      TestStatus status,
       int durationMs,
       String message,
       boolean isHidden,

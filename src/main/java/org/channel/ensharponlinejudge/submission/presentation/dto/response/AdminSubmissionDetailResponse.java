@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
+import org.channel.ensharponlinejudge.submission.domain.TestStatus;
 
 import lombok.Builder;
 
@@ -25,7 +26,7 @@ public record AdminSubmissionDetailResponse(
   @Builder
   public record TestDetailResponse(
       String methodName,
-      SubmissionStatus status,
+      TestStatus status,
       Integer durationMs,
       String message,
       boolean isHidden,

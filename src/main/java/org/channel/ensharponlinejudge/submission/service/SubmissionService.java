@@ -13,6 +13,7 @@ import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
 import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionResultDetail;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
+import org.channel.ensharponlinejudge.submission.domain.TestStatus;
 import org.channel.ensharponlinejudge.submission.infra.queue.dto.SubmissionCreatedEvent;
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.MyGlobalSubmissionResponse;
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.SubmissionDetailResponse;
@@ -155,8 +156,8 @@ public class SubmissionService {
                   try {
                     return new SubmissionDetailResponse.TestDetailResponse(
                         d.isHidden() ? "히든 테스트 케이스" : d.getMethodName(),
-                        d.getStatus().name(),
-                        (long) d.getDurationMs(),
+                        d.getStatus(),
+                        d.getDurationMs(),
                         d.isHidden() ? null : d.getMessage(),
                         d.isHidden(),
                         d.getScore());

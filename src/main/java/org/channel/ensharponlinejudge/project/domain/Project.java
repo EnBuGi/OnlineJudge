@@ -122,7 +122,6 @@ public class Project {
       LocalDateTime startDate,
       LocalDateTime dueDate,
       String skeletonUrl,
-      String testCodeUrl,
       Integer timeLimit,
       Integer memoryLimit) {
     this.generation = generation;
@@ -132,7 +131,6 @@ public class Project {
     this.startDate = startDate;
     this.dueDate = dueDate;
     this.skeletonUrl = skeletonUrl;
-    this.testCodeUrl = testCodeUrl;
     this.timeLimit = timeLimit;
     this.memoryLimit = memoryLimit;
   }

@@ -116,9 +116,11 @@ public class ProjectService {
         request.startDate(),
         request.dueDate(),
         request.skeletonUrl(),
-        request.testCodeUrl(),
         request.scorePolicy().timeLimit(),
         request.scorePolicy().memoryLimit());
+
+    // 테스트 코드 키가 있으면 처리
+    handleTestCodeKey(project, request.testCodeKey());
 
     // Delete existing cases and save new ones
     projectTestCaseRepository.deleteByProjectId(projectId);
@@ -219,6 +221,16 @@ public class ProjectService {
             .cases(caseDtos)
             .build();
 
+    String testCodeUrl = project.getTestCodeUrl();
+    if (testCodeUrl != null && !testCodeUrl.isBlank() && !testCodeUrl.startsWith("http")) {
+      // DB에 저장된 값이 URL이 아닌 객체 키인 경우 실시간 PAR 발급
+      try {
+        testCodeUrl = objectStorageService.generateGetUrl(testCodeUrl);
+      } catch (Exception e) {
+        log.error("Failed to generate PAR URL for project {}: {}", projectId, e.getMessage());
+      }
+    }
+
     return AdminProjectDetailResponse.builder()
         .id(project.getId())
         .title(project.getTitle())
@@ -228,7 +240,7 @@ public class ProjectService {
         .startDate(project.getStartDate())
         .dueDate(project.getDueDate())
         .skeletonUrl(project.getSkeletonUrl())
-        .testCodeUrl(project.getTestCodeUrl())
+        .testCodeUrl(testCodeUrl)
         .scorePolicy(scorePolicy)
         .build();
   }
@@ -371,11 +383,11 @@ public class ProjectService {
     String objectKey = "projects/" + projectId.toString() + "/test-code.zip";
     objectStorageService.uploadTestCode(file, objectKey);
 
-    // PAR GET URL 생성
-    String testCodeUrl = objectStorageService.generateGetUrl(objectKey);
+    // 프로젝트에 객체 키(objectKey) 저장 (이전에는 PAR URL을 저장했으나 만료 문제로 변경)
+    project.updateTestCodeUrl(objectKey);
 
-    // 프로젝트에 testCodeUrl 저장
-    project.updateTestCodeUrl(testCodeUrl);
+    // 반환용 PAR URL 생성 (프론트엔드 즉시 확인용)
+    String testCodeUrl = objectStorageService.generateGetUrl(objectKey);
 
     return TestCodeUploadResponse.builder().testCodeUrl(testCodeUrl).build();
   }
@@ -392,13 +404,8 @@ public class ProjectService {
         objectStorageService.moveTempToPermanent(testCodeKey, permanentKey);
         log.info("[ProjectService] File moved successfully for project {}", project.getId());
 
-        String testCodeUrl = objectStorageService.generateGetUrl(permanentKey);
-        log.info(
-            "[ProjectService] Generated testCodeUrl for project {}: {}",
-            project.getId(),
-            testCodeUrl);
-
-        project.updateTestCodeUrl(testCodeUrl);
+        // 프로젝트에 객체 키(permanentKey) 저장
+        project.updateTestCodeUrl(permanentKey);
       } catch (Exception e) {
         log.error(
             "[ProjectService] Failed to handle testCodeKey for project {}: error={}",

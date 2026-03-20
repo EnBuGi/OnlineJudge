@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: prod
+    active: dev, local
   main:
     allow-bean-definition-overriding: true
   flyway:

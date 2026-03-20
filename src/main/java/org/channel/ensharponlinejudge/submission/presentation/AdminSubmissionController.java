@@ -8,6 +8,9 @@ import org.channel.ensharponlinejudge.submission.presentation.dto.response.Admin
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.AdminSubmissionDetailResponse;
 import org.channel.ensharponlinejudge.submission.presentation.dto.response.AdminUserProjectSubmissionResponse;
 import org.channel.ensharponlinejudge.submission.service.AdminSubmissionService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,8 +35,9 @@ public class AdminSubmissionController {
   }
 
   @GetMapping("/submissions")
-  public ResponseEntity<List<AdminGlobalSubmissionResponse>> getGlobalSubmissions() {
-    return ResponseEntity.ok(adminSubmissionService.getGlobalSubmissions());
+  public ResponseEntity<Page<AdminGlobalSubmissionResponse>> getGlobalSubmissions(
+      @PageableDefault(size = 10) Pageable pageable) {
+    return ResponseEntity.ok(adminSubmissionService.getGlobalSubmissions(pageable));
   }
 
   @GetMapping("/submissions/{submissionId}")
@@ -43,8 +47,11 @@ public class AdminSubmissionController {
   }
 
   @GetMapping("/projects/{projectId}/users/{userId}/submissions")
-  public ResponseEntity<List<AdminUserProjectSubmissionResponse>> getUserProjectSubmissions(
-      @PathVariable("projectId") UUID projectId, @PathVariable("userId") UUID userId) {
-    return ResponseEntity.ok(adminSubmissionService.getUserProjectSubmissions(projectId, userId));
+  public ResponseEntity<Page<AdminUserProjectSubmissionResponse>> getUserProjectSubmissions(
+      @PathVariable("projectId") UUID projectId,
+      @PathVariable("userId") UUID userId,
+      @PageableDefault(size = 10) Pageable pageable) {
+    return ResponseEntity.ok(
+        adminSubmissionService.getUserProjectSubmissions(projectId, userId, pageable));
   }
 }

@@ -69,7 +69,7 @@ public class ProjectService {
             request.startDate(),
             request.dueDate(),
             request.skeletonUrl(),
-            request.testCodeUrl(),
+            request.testCodeKey(),
             request.scorePolicy().timeLimit(),
             request.scorePolicy().memoryLimit());
 
@@ -224,11 +224,11 @@ public class ProjectService {
             .cases(caseDtos)
             .build();
 
-    String testCodeUrl = project.getTestCodeUrl();
-    if (testCodeUrl != null && !testCodeUrl.isBlank() && !testCodeUrl.startsWith("http")) {
+    String testCodeKey = project.getTestCodeKey();
+    if (testCodeKey != null && !testCodeKey.isBlank() && !testCodeKey.startsWith("http")) {
       // DB에 저장된 값이 URL이 아닌 객체 키인 경우 실시간 PAR 발급
       try {
-        testCodeUrl = objectStorageService.generateGetUrl(testCodeUrl);
+        testCodeKey = objectStorageService.generateGetUrl(testCodeKey);
       } catch (Exception e) {
         log.error("Failed to generate PAR URL for project {}: {}", projectId, e.getMessage());
       }
@@ -243,7 +243,7 @@ public class ProjectService {
         .startDate(project.getStartDate())
         .dueDate(project.getDueDate())
         .skeletonUrl(project.getSkeletonUrl())
-        .testCodeUrl(testCodeUrl)
+        .testCodeKey(testCodeKey)
         .scorePolicy(scorePolicy)
         .build();
   }
@@ -413,12 +413,12 @@ public class ProjectService {
     objectStorageService.uploadTestCode(file, objectKey);
 
     // 프로젝트에 객체 키(objectKey) 저장 (이전에는 PAR URL을 저장했으나 만료 문제로 변경)
-    project.updateTestCodeUrl(objectKey);
+    project.updateTestCodeKey(objectKey);
 
     // 반환용 PAR URL 생성 (프론트엔드 즉시 확인용)
     String testCodeUrl = objectStorageService.generateGetUrl(objectKey);
 
-    return TestCodeUploadResponse.builder().testCodeUrl(testCodeUrl).build();
+    return TestCodeUploadResponse.builder().testCodeKey(testCodeUrl).build();
   }
 
   private void handleTestCodeKey(Project project, String testCodeKey) {
@@ -434,7 +434,7 @@ public class ProjectService {
         log.info("[ProjectService] File moved successfully for project {}", project.getId());
 
         // 프로젝트에 객체 키(permanentKey) 저장
-        project.updateTestCodeUrl(permanentKey);
+        project.updateTestCodeKey(permanentKey);
       } catch (Exception e) {
         log.error(
             "[ProjectService] Failed to handle testCodeKey for project {}: error={}",

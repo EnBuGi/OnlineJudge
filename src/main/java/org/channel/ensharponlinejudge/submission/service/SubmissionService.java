@@ -52,7 +52,7 @@ public class SubmissionService {
             .findById(projectId)
             .orElseThrow(() -> new BusinessException(SubmissionErrorCode.PROJECT_NOT_FOUND));
 
-    if (project.getTestCodeUrl() == null || project.getTestCodeUrl().isBlank()) {
+    if (project.getTestCodeKey() == null || project.getTestCodeKey().isBlank()) {
       throw new BusinessException(SubmissionErrorCode.TEST_CASE_NOT_FOUND);
     }
 

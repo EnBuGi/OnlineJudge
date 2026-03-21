@@ -48,8 +48,8 @@ public class Project {
   @Column(name = "skeleton_url")
   private String skeletonUrl;
 
-  @Column(name = "test_code_url")
-  private String testCodeUrl;
+  @Column(name = "test_code_key")
+  private String testCodeKey;
 
   @Column(name = "time_limit")
   private Integer timeLimit;
@@ -74,7 +74,7 @@ public class Project {
       LocalDateTime startDate,
       LocalDateTime dueDate,
       String skeletonUrl,
-      String testCodeUrl,
+      String testCodeKey,
       Integer timeLimit,
       Integer memoryLimit) {
     this.generation = generation;
@@ -84,7 +84,7 @@ public class Project {
     this.startDate = startDate;
     this.dueDate = dueDate;
     this.skeletonUrl = skeletonUrl;
-    this.testCodeUrl = testCodeUrl;
+    this.testCodeKey = testCodeKey;
     this.timeLimit = timeLimit;
     this.memoryLimit = memoryLimit;
   }
@@ -97,7 +97,7 @@ public class Project {
       LocalDateTime startDate,
       LocalDateTime dueDate,
       String skeletonUrl,
-      String testCodeUrl,
+      String testCodeKey,
       Integer timeLimit,
       Integer memoryLimit) {
     return Project.builder()
@@ -108,7 +108,7 @@ public class Project {
         .startDate(startDate)
         .dueDate(dueDate)
         .skeletonUrl(skeletonUrl)
-        .testCodeUrl(testCodeUrl)
+        .testCodeKey(testCodeKey)
         .timeLimit(timeLimit)
         .memoryLimit(memoryLimit)
         .build();
@@ -135,8 +135,8 @@ public class Project {
     this.memoryLimit = memoryLimit;
   }
 
-  /** OCI 오브젝트 스토리지에 업로드된 테스트 코드의 PAR URL을 저장합니다. */
-  public void updateTestCodeUrl(String testCodeUrl) {
-    this.testCodeUrl = testCodeUrl;
+  /** OCI 오브젝트 스토리지에 업로드된 테스트 코드의 Key값을 저장합니다. */
+  public void updateTestCodeKey(String testCodeKey) {
+    this.testCodeKey = testCodeKey;
   }
 }

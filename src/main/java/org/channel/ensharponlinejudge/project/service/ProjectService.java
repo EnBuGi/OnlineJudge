@@ -1,11 +1,10 @@
 package org.channel.ensharponlinejudge.project.service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -33,6 +32,10 @@ import org.channel.ensharponlinejudge.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.MethodDeclaration;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -332,24 +335,50 @@ public class ProjectService {
       ZipEntry entry;
       while ((entry = zis.getNextEntry()) != null) {
         if (!entry.isDirectory() && entry.getName().endsWith(".java")) {
-          // Read content for parsing
-          StringBuilder content = new StringBuilder();
-          byte[] buffer = new byte[8192];
-          int length;
-          while ((length = zis.read(buffer)) != -1) {
-            content.append(new String(buffer, 0, length));
-          }
+          try {
+            // ZipInputStream이 중도에 닫히는 것을 방지하기 위해 데이터를 먼저 읽음
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int len;
+            while ((len = zis.read(buf)) != -1) {
+              baos.write(buf, 0, len);
+            }
 
-          // JUnit @Test annotation regex
-          Pattern pattern = Pattern.compile("@Test\\s+(?:public\\s+)?void\\s+(\\w+)\\s*\\(");
-          Matcher matcher = pattern.matcher(content.toString());
+            if (baos.size() == 0) continue;
 
-          while (matcher.find()) {
-            methodNames.add(matcher.group(1));
+            // JavaParser를 사용하여 소스 코드 파싱
+            CompilationUnit cu = StaticJavaParser.parse(baos.toString());
+
+            // 모든 메서드 선언을 찾아서 어노테이션 확인
+            cu.findAll(MethodDeclaration.class)
+                .forEach(
+                    method -> {
+                      boolean isTest =
+                          method.getAnnotations().stream()
+                              .anyMatch(
+                                  ann -> {
+                                    String name = ann.getNameAsString();
+                                    return name.equals("Test")
+                                        || name.equals("ParameterizedTest")
+                                        || name.equals("RepeatedTest")
+                                        || name.endsWith(".Test")
+                                        || name.endsWith(".ParameterizedTest")
+                                        || name.endsWith(".RepeatedTest");
+                                  });
+
+                      if (isTest) {
+                        methodNames.add(method.getNameAsString());
+                      }
+                    });
+          } catch (Exception e) {
+            // 개별 파일 파싱 실패 시 로그를 남기고 다음 파일로 진행
+            log.warn(
+                "Failed to parse java file in zip: {}. Error: {}", entry.getName(), e.getMessage());
           }
         }
       }
     } catch (IOException e) {
+      log.error("IO error while parsing test code zip", e);
       throw new BusinessException(ProjectErrorCode.ERR_FILE_PARSE_FAILED);
     }
 

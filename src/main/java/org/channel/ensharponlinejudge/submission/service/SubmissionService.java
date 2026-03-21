@@ -52,7 +52,7 @@ public class SubmissionService {
             .findById(projectId)
             .orElseThrow(() -> new BusinessException(SubmissionErrorCode.PROJECT_NOT_FOUND));
 
-    if (project.getTestCodeUrl() == null || project.getTestCodeUrl().isBlank()) {
+    if (project.getTestCodeKey() == null || project.getTestCodeKey().isBlank()) {
       throw new BusinessException(SubmissionErrorCode.TEST_CASE_NOT_FOUND);
     }
 
@@ -95,6 +95,7 @@ public class SubmissionService {
                 submission.getRepoUrl(),
                 submission.getStatus(),
                 submission.getScore(),
+                "Java",
                 submission.getSubmittedAt()));
   }
 
@@ -205,6 +206,7 @@ public class SubmissionService {
                       .projectId(s.getProjectId())
                       .submittedAt(s.getSubmittedAt())
                       .problemTitle(project != null ? project.getTitle() : "Unknown")
+                      .language("Java")
                       .status(s.getStatus())
                       .score(s.getScore())
                       .memoryUsage(s.getMemoryUsage())

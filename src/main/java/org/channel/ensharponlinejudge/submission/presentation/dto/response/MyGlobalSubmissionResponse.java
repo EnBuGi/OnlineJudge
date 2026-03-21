@@ -13,6 +13,7 @@ public record MyGlobalSubmissionResponse(
     UUID projectId,
     LocalDateTime submittedAt,
     String problemTitle,
+    String language,
     SubmissionStatus status,
     Integer score,
     Integer memoryUsage,

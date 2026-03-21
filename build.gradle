@@ -51,6 +51,7 @@ dependencies {
     implementation 'com.oracle.oci.sdk:oci-java-sdk-common-httpclient-jersey3:3.54.0' // HTTP Provider 필수
 
     // Utilities
+    implementation 'com.github.javaparser:javaparser-core:3.26.3'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 

@@ -10,4 +10,5 @@ public record SubmissionHistoryResponse(
     String repoUrl,
     SubmissionStatus status,
     Integer score,
+    String language,
     LocalDateTime submittedAt) {}

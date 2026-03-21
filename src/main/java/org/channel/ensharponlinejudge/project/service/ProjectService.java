@@ -225,10 +225,10 @@ public class ProjectService {
             .build();
 
     String testCodeKey = project.getTestCodeKey();
-    if (testCodeKey != null && !testCodeKey.isBlank() && !testCodeKey.startsWith("http")) {
-      // DB에 저장된 값이 URL이 아닌 객체 키인 경우 실시간 PAR 발급
+    String testCodeUrl = null;
+    if (testCodeKey != null && !testCodeKey.isBlank()) {
       try {
-        testCodeKey = objectStorageService.generateGetUrl(testCodeKey);
+        testCodeUrl = objectStorageService.generateGetUrl(testCodeKey);
       } catch (Exception e) {
         log.error("Failed to generate PAR URL for project {}: {}", projectId, e.getMessage());
       }
@@ -244,6 +244,7 @@ public class ProjectService {
         .dueDate(project.getDueDate())
         .skeletonUrl(project.getSkeletonUrl())
         .testCodeKey(testCodeKey)
+        .testCodeUrl(testCodeUrl)
         .scorePolicy(scorePolicy)
         .build();
   }
@@ -384,8 +385,13 @@ public class ProjectService {
 
     // OCI 임시 경로에 업로드
     String tempKey = objectStorageService.uploadTempTestCode(file);
+    String testCodeUrl = objectStorageService.generateGetUrl(tempKey);
 
-    return TestCodeParseResponse.builder().methodNames(methodNames).testCodeKey(tempKey).build();
+    return TestCodeParseResponse.builder()
+        .methodNames(methodNames)
+        .testCodeKey(tempKey)
+        .testCodeUrl(testCodeUrl)
+        .build();
   }
 
   /**
@@ -418,16 +424,33 @@ public class ProjectService {
     // 반환용 PAR URL 생성 (프론트엔드 즉시 확인용)
     String testCodeUrl = objectStorageService.generateGetUrl(objectKey);
 
-    return TestCodeUploadResponse.builder().testCodeKey(testCodeUrl).build();
+    return TestCodeUploadResponse.builder().testCodeKey(objectKey).testCodeUrl(testCodeUrl).build();
   }
 
   private void handleTestCodeKey(Project project, String testCodeKey) {
     if (testCodeKey != null && !testCodeKey.isBlank()) {
+      String permanentKey = "projects/" + project.getId().toString() + "/test-code.zip";
+
+      // 만약 이미 해당 프로젝트의 정식 키라면 아무 작업도 하지 않음
+      if (testCodeKey.equals(permanentKey)) {
+        log.debug(
+            "[ProjectService] testCodeKey is already permanent for project {}", project.getId());
+        return;
+      }
+
+      // 보안 확인: 임시 경로(temp/)에 있는 파일만 이동 가능하도록 제한
+      if (!testCodeKey.startsWith("temp/")) {
+        log.warn(
+            "[ProjectService] Security warning: attempt to use non-temp key {} for project {}",
+            testCodeKey,
+            project.getId());
+        return;
+      }
+
       log.info(
           "[ProjectService] Handling testCodeKey for project {}: tempKey={}",
           project.getId(),
           testCodeKey);
-      String permanentKey = "projects/" + project.getId().toString() + "/test-code.zip";
 
       try {
         objectStorageService.moveTempToPermanent(testCodeKey, permanentKey);

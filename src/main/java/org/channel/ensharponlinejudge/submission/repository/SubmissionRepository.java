@@ -11,6 +11,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
 
+  void deleteByProjectId(UUID projectId);
+
   boolean existsByUserIdAndProjectIdAndStatusIn(
       UUID userId, UUID projectId, List<SubmissionStatus> statuses);
 

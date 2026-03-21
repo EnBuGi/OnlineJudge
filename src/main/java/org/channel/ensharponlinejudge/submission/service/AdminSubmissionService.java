@@ -73,12 +73,13 @@ public class AdminSubmissionService {
                   .lastSubmittedAt(latest != null ? latest.getSubmittedAt() : null)
                   .build();
             })
-        .sorted((r1, r2) -> {
-            if (r1.lastSubmittedAt() == null && r2.lastSubmittedAt() == null) return 0;
-            if (r1.lastSubmittedAt() == null) return 1;
-            if (r2.lastSubmittedAt() == null) return -1;
-            return r2.lastSubmittedAt().compareTo(r1.lastSubmittedAt());
-        })
+        .sorted(
+            (r1, r2) -> {
+              if (r1.lastSubmittedAt() == null && r2.lastSubmittedAt() == null) return 0;
+              if (r1.lastSubmittedAt() == null) return 1;
+              if (r2.lastSubmittedAt() == null) return -1;
+              return r2.lastSubmittedAt().compareTo(r1.lastSubmittedAt());
+            })
         .collect(Collectors.toList());
   }
 

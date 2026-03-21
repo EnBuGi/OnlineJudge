@@ -65,7 +65,7 @@ public class ProjectAdminController {
     return ResponseEntity.ok().build();
   }
 
-  @DeleteMapping("/project/{id}")
+  @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteProject(
       @AuthenticationPrincipal UserDetails userDetails, @PathVariable("id") UUID projectId) {
 

@@ -26,6 +26,9 @@ import org.channel.ensharponlinejudge.project.presentation.dto.response.TestCode
 import org.channel.ensharponlinejudge.project.presentation.dto.response.TestCodeUploadResponse;
 import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
 import org.channel.ensharponlinejudge.project.repository.ProjectTestCaseRepository;
+import org.channel.ensharponlinejudge.submission.domain.Submission;
+import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
+import org.channel.ensharponlinejudge.submission.repository.SubmissionResultDetailRepository;
 import org.channel.ensharponlinejudge.user.domain.Role;
 import org.channel.ensharponlinejudge.user.domain.User;
 import org.channel.ensharponlinejudge.user.repository.UserRepository;
@@ -47,6 +50,8 @@ public class ProjectService {
   private final ProjectRepository projectRepository;
   private final ProjectTestCaseRepository projectTestCaseRepository;
   private final UserRepository userRepository;
+  private final SubmissionRepository submissionRepository;
+  private final SubmissionResultDetailRepository submissionResultDetailRepository;
   private final ObjectStorageService objectStorageService;
 
   @Transactional
@@ -158,7 +163,22 @@ public class ProjectService {
             .findById(projectId)
             .orElseThrow(() -> new BusinessException(ProjectErrorCode.ERR_PROJECT_NOT_FOUND));
 
+    // 1. 해당 프로젝트의 모든 제출 내역 조회
+    List<Submission> submissions = submissionRepository.findByProjectId(projectId);
+    List<UUID> submissionIds = submissions.stream().map(Submission::getId).toList();
+
+    // 2. 제출 내역의 상세 결과 삭제
+    if (!submissionIds.isEmpty()) {
+      submissionResultDetailRepository.deleteBySubmissionIdIn(submissionIds);
+    }
+
+    // 3. 제출 내역 삭제
+    submissionRepository.deleteByProjectId(projectId);
+
+    // 4. 프로젝트 테스트 케이스 삭제
     projectTestCaseRepository.deleteByProjectId(projectId);
+
+    // 5. 프로젝트 삭제
     projectRepository.delete(project);
   }
 

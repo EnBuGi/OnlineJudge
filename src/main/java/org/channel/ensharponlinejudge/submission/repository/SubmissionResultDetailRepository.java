@@ -9,4 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface SubmissionResultDetailRepository
     extends JpaRepository<SubmissionResultDetail, UUID> {
   List<SubmissionResultDetail> findBySubmissionId(UUID submissionId);
+
+  void deleteBySubmissionIdIn(List<UUID> submissionIds);
 }

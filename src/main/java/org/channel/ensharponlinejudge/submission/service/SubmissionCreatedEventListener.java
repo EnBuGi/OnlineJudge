@@ -41,8 +41,11 @@ public class SubmissionCreatedEventListener {
             .orElseThrow(() -> new BusinessException(SubmissionErrorCode.PROJECT_NOT_FOUND));
 
     // Generate fresh PAR URL for test code (to avoid expiration 404)
-    String objectKey = "projects/" + project.getId().toString() + "/test-code.zip";
-    String freshTestCodeUrl = objectStorageService.generateGetUrl(objectKey);
+    String testCodeKey = project.getTestCodeKey();
+    if (testCodeKey == null || testCodeKey.isBlank()) {
+      throw new BusinessException(SubmissionErrorCode.TEST_CASE_NOT_FOUND);
+    }
+    String freshTestCodeUrl = objectStorageService.generateGetUrl(testCodeKey);
     log.info("[SubmissionCreatedEventListener] Generated fresh testCodeUrl: {}", freshTestCodeUrl);
 
     SubmissionJudgeRequest submissionJudgeRequest =

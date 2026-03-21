@@ -26,7 +26,11 @@ public class UserSubmissionController {
   @GetMapping("/me")
   public ResponseEntity<Page<MyGlobalSubmissionResponse>> getMyGlobalSubmissions(
       @AuthenticationPrincipal UserDetails userDetails,
-      @PageableDefault(size = 10) Pageable pageable) {
+      @PageableDefault(
+              size = 10,
+              sort = "submittedAt",
+              direction = org.springframework.data.domain.Sort.Direction.DESC)
+          Pageable pageable) {
 
     UUID userId = UUID.fromString(userDetails.getUsername());
     return ResponseEntity.ok(submissionService.getMyGlobalSubmissions(userId, pageable));

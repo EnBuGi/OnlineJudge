@@ -36,7 +36,11 @@ public class AdminSubmissionController {
 
   @GetMapping("/submissions")
   public ResponseEntity<Page<AdminGlobalSubmissionResponse>> getGlobalSubmissions(
-      @PageableDefault(size = 10) Pageable pageable) {
+      @PageableDefault(
+              size = 10,
+              sort = "submittedAt",
+              direction = org.springframework.data.domain.Sort.Direction.DESC)
+          Pageable pageable) {
     return ResponseEntity.ok(adminSubmissionService.getGlobalSubmissions(pageable));
   }
 
@@ -50,7 +54,11 @@ public class AdminSubmissionController {
   public ResponseEntity<Page<AdminUserProjectSubmissionResponse>> getUserProjectSubmissions(
       @PathVariable("projectId") UUID projectId,
       @PathVariable("userId") UUID userId,
-      @PageableDefault(size = 10) Pageable pageable) {
+      @PageableDefault(
+              size = 10,
+              sort = "submittedAt",
+              direction = org.springframework.data.domain.Sort.Direction.DESC)
+          Pageable pageable) {
     return ResponseEntity.ok(
         adminSubmissionService.getUserProjectSubmissions(projectId, userId, pageable));
   }

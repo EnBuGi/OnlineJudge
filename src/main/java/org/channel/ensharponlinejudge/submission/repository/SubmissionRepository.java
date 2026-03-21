@@ -23,9 +23,13 @@ public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
 
   Page<Submission> findByUserId(UUID userId, Pageable pageable);
 
+  Page<Submission> findByUserIdOrderBySubmittedAtDesc(UUID userId, Pageable pageable);
+
   List<Submission> findByUserIdOrderBySubmittedAtDesc(UUID userId);
 
   Page<Submission> findAll(Pageable pageable);
+
+  Page<Submission> findAllByOrderBySubmittedAtDesc(Pageable pageable);
 
   List<Submission> findAllByOrderBySubmittedAtDesc();
 }

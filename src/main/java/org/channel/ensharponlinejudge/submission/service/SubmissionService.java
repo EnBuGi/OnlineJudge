@@ -187,7 +187,8 @@ public class SubmissionService {
 
   @Transactional(readOnly = true)
   public Page<MyGlobalSubmissionResponse> getMyGlobalSubmissions(UUID userId, Pageable pageable) {
-    Page<Submission> submissions = submissionRepository.findByUserId(userId, pageable);
+    Page<Submission> submissions =
+        submissionRepository.findByUserIdOrderBySubmittedAtDesc(userId, pageable);
 
     Set<UUID> projectIds =
         submissions.stream().map(Submission::getProjectId).collect(Collectors.toSet());

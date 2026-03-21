@@ -73,11 +73,17 @@ public class AdminSubmissionService {
                   .lastSubmittedAt(latest != null ? latest.getSubmittedAt() : null)
                   .build();
             })
+        .sorted((r1, r2) -> {
+            if (r1.lastSubmittedAt() == null && r2.lastSubmittedAt() == null) return 0;
+            if (r1.lastSubmittedAt() == null) return 1;
+            if (r2.lastSubmittedAt() == null) return -1;
+            return r2.lastSubmittedAt().compareTo(r1.lastSubmittedAt());
+        })
         .collect(Collectors.toList());
   }
 
   public Page<AdminGlobalSubmissionResponse> getGlobalSubmissions(Pageable pageable) {
-    Page<Submission> submissions = submissionRepository.findAll(pageable);
+    Page<Submission> submissions = submissionRepository.findAllByOrderBySubmittedAtDesc(pageable);
 
     Set<UUID> userIds = submissions.stream().map(Submission::getUserId).collect(Collectors.toSet());
     Set<UUID> projectIds =

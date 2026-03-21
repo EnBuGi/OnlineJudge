@@ -1,11 +1,10 @@
 package org.channel.ensharponlinejudge.project.service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -33,6 +32,10 @@ import org.channel.ensharponlinejudge.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.github.javaparser.StaticJavaParser;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.MethodDeclaration;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -66,7 +69,7 @@ public class ProjectService {
             request.startDate(),
             request.dueDate(),
             request.skeletonUrl(),
-            request.testCodeUrl(),
+            request.testCodeKey(),
             request.scorePolicy().timeLimit(),
             request.scorePolicy().memoryLimit());
 
@@ -116,9 +119,11 @@ public class ProjectService {
         request.startDate(),
         request.dueDate(),
         request.skeletonUrl(),
-        request.testCodeUrl(),
         request.scorePolicy().timeLimit(),
         request.scorePolicy().memoryLimit());
+
+    // 테스트 코드 키가 있으면 처리
+    handleTestCodeKey(project, request.testCodeKey());
 
     // Delete existing cases and save new ones
     projectTestCaseRepository.deleteByProjectId(projectId);
@@ -219,6 +224,16 @@ public class ProjectService {
             .cases(caseDtos)
             .build();
 
+    String testCodeKey = project.getTestCodeKey();
+    String testCodeUrl = null;
+    if (testCodeKey != null && !testCodeKey.isBlank()) {
+      try {
+        testCodeUrl = objectStorageService.generateGetUrl(testCodeKey);
+      } catch (Exception e) {
+        log.error("Failed to generate PAR URL for project {}: {}", projectId, e.getMessage());
+      }
+    }
+
     return AdminProjectDetailResponse.builder()
         .id(project.getId())
         .title(project.getTitle())
@@ -228,7 +243,8 @@ public class ProjectService {
         .startDate(project.getStartDate())
         .dueDate(project.getDueDate())
         .skeletonUrl(project.getSkeletonUrl())
-        .testCodeUrl(project.getTestCodeUrl())
+        .testCodeKey(testCodeKey)
+        .testCodeUrl(testCodeUrl)
         .scorePolicy(scorePolicy)
         .build();
   }
@@ -320,31 +336,62 @@ public class ProjectService {
       ZipEntry entry;
       while ((entry = zis.getNextEntry()) != null) {
         if (!entry.isDirectory() && entry.getName().endsWith(".java")) {
-          // Read content for parsing
-          StringBuilder content = new StringBuilder();
-          byte[] buffer = new byte[8192];
-          int length;
-          while ((length = zis.read(buffer)) != -1) {
-            content.append(new String(buffer, 0, length));
-          }
+          try {
+            // ZipInputStream이 중도에 닫히는 것을 방지하기 위해 데이터를 먼저 읽음
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int len;
+            while ((len = zis.read(buf)) != -1) {
+              baos.write(buf, 0, len);
+            }
 
-          // JUnit @Test annotation regex
-          Pattern pattern = Pattern.compile("@Test\\s+(?:public\\s+)?void\\s+(\\w+)\\s*\\(");
-          Matcher matcher = pattern.matcher(content.toString());
+            if (baos.size() == 0) continue;
 
-          while (matcher.find()) {
-            methodNames.add(matcher.group(1));
+            // JavaParser를 사용하여 소스 코드 파싱
+            CompilationUnit cu = StaticJavaParser.parse(baos.toString());
+
+            // 모든 메서드 선언을 찾아서 어노테이션 확인
+            cu.findAll(MethodDeclaration.class)
+                .forEach(
+                    method -> {
+                      boolean isTest =
+                          method.getAnnotations().stream()
+                              .anyMatch(
+                                  ann -> {
+                                    String name = ann.getNameAsString();
+                                    return name.equals("Test")
+                                        || name.equals("ParameterizedTest")
+                                        || name.equals("RepeatedTest")
+                                        || name.endsWith(".Test")
+                                        || name.endsWith(".ParameterizedTest")
+                                        || name.endsWith(".RepeatedTest");
+                                  });
+
+                      if (isTest) {
+                        methodNames.add(method.getNameAsString());
+                      }
+                    });
+          } catch (Exception e) {
+            // 개별 파일 파싱 실패 시 로그를 남기고 다음 파일로 진행
+            log.warn(
+                "Failed to parse java file in zip: {}. Error: {}", entry.getName(), e.getMessage());
           }
         }
       }
     } catch (IOException e) {
+      log.error("IO error while parsing test code zip", e);
       throw new BusinessException(ProjectErrorCode.ERR_FILE_PARSE_FAILED);
     }
 
     // OCI 임시 경로에 업로드
     String tempKey = objectStorageService.uploadTempTestCode(file);
+    String testCodeUrl = objectStorageService.generateGetUrl(tempKey);
 
-    return TestCodeParseResponse.builder().methodNames(methodNames).testCodeKey(tempKey).build();
+    return TestCodeParseResponse.builder()
+        .methodNames(methodNames)
+        .testCodeKey(tempKey)
+        .testCodeUrl(testCodeUrl)
+        .build();
   }
 
   /**
@@ -371,34 +418,46 @@ public class ProjectService {
     String objectKey = "projects/" + projectId.toString() + "/test-code.zip";
     objectStorageService.uploadTestCode(file, objectKey);
 
-    // PAR GET URL 생성
+    // 프로젝트에 객체 키(objectKey) 저장 (이전에는 PAR URL을 저장했으나 만료 문제로 변경)
+    project.updateTestCodeKey(objectKey);
+
+    // 반환용 PAR URL 생성 (프론트엔드 즉시 확인용)
     String testCodeUrl = objectStorageService.generateGetUrl(objectKey);
 
-    // 프로젝트에 testCodeUrl 저장
-    project.updateTestCodeUrl(testCodeUrl);
-
-    return TestCodeUploadResponse.builder().testCodeUrl(testCodeUrl).build();
+    return TestCodeUploadResponse.builder().testCodeKey(objectKey).testCodeUrl(testCodeUrl).build();
   }
 
   private void handleTestCodeKey(Project project, String testCodeKey) {
     if (testCodeKey != null && !testCodeKey.isBlank()) {
+      String permanentKey = "projects/" + project.getId().toString() + "/test-code.zip";
+
+      // 만약 이미 해당 프로젝트의 정식 키라면 아무 작업도 하지 않음
+      if (testCodeKey.equals(permanentKey)) {
+        log.debug(
+            "[ProjectService] testCodeKey is already permanent for project {}", project.getId());
+        return;
+      }
+
+      // 보안 확인: 임시 경로(temp/)에 있는 파일만 이동 가능하도록 제한
+      if (!testCodeKey.startsWith("temp/")) {
+        log.warn(
+            "[ProjectService] Security warning: attempt to use non-temp key {} for project {}",
+            testCodeKey,
+            project.getId());
+        return;
+      }
+
       log.info(
           "[ProjectService] Handling testCodeKey for project {}: tempKey={}",
           project.getId(),
           testCodeKey);
-      String permanentKey = "projects/" + project.getId().toString() + "/test-code.zip";
 
       try {
         objectStorageService.moveTempToPermanent(testCodeKey, permanentKey);
         log.info("[ProjectService] File moved successfully for project {}", project.getId());
 
-        String testCodeUrl = objectStorageService.generateGetUrl(permanentKey);
-        log.info(
-            "[ProjectService] Generated testCodeUrl for project {}: {}",
-            project.getId(),
-            testCodeUrl);
-
-        project.updateTestCodeUrl(testCodeUrl);
+        // 프로젝트에 객체 키(permanentKey) 저장
+        project.updateTestCodeKey(permanentKey);
       } catch (Exception e) {
         log.error(
             "[ProjectService] Failed to handle testCodeKey for project {}: error={}",

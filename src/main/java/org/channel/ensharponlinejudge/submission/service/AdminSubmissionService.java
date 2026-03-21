@@ -103,6 +103,7 @@ public class AdminSubmissionService {
                       .githubId(user != null ? user.getGithubId() : "Unknown")
                       .name(user != null ? user.getName() : "Unknown")
                       .problemTitle(project != null ? project.getTitle() : "Unknown")
+                      .language("Java")
                       .status(s.getStatus())
                       .score(s.getScore())
                       .memoryUsage(s.getMemoryUsage())

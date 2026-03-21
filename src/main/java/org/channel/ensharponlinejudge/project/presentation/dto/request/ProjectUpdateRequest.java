@@ -22,6 +22,5 @@ public record ProjectUpdateRequest(
     @NotNull @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime dueDate,
     String description,
     String skeletonUrl,
-    String testCodeUrl,
     String testCodeKey,
     @Valid @NotNull ScorePolicyDto scorePolicy) {}

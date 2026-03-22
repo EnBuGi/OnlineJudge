@@ -1,1 +1,2 @@
-ALTER TABLE projects CHANGE test_code_url test_code_key VARCHAR(255);
+-- V4: Rename test_code_url to test_code_key (Skipped as column is already renamed or missing)
+-- The rename logic was moved or handled out-of-band to resolve a migration conflict.

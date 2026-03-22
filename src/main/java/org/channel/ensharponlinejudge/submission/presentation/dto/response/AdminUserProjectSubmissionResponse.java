@@ -16,6 +16,6 @@ public class AdminUserProjectSubmissionResponse {
   private Integer score;
   private Integer memoryUsage;
   private Integer timeExecution;
-  private String language;
+  private String projectType;
   private LocalDateTime submittedAt;
 }

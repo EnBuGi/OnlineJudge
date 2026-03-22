@@ -110,7 +110,7 @@ public class AdminSubmissionService {
                       .githubId(user != null ? user.getGithubId() : "Unknown")
                       .name(user != null ? user.getName() : "Unknown")
                       .problemTitle(project != null ? project.getTitle() : "Unknown")
-                      .language("Java")
+                      .projectType(project != null ? project.getType().name() : "Unknown")
                       .status(s.getStatus())
                       .score(s.getScore())
                       .memoryUsage(s.getMemoryUsage())
@@ -159,6 +159,11 @@ public class AdminSubmissionService {
         .score(submission.getScore())
         .memoryUsage(submission.getMemoryUsage())
         .timeExecution(submission.getTimeUsage())
+        .projectType(
+            projectRepository
+                .findById(submission.getProjectId())
+                .map(p -> p.getType().name())
+                .orElse("Unknown"))
         .submittedAt(submission.getSubmittedAt())
         .sourceCode("") // Still need to find where source code is stored
         .testDetails(testDetails)
@@ -171,6 +176,9 @@ public class AdminSubmissionService {
         submissionRepository.findByUserIdAndProjectIdOrderBySubmittedAtDesc(
             userId, projectId, pageable);
 
+    String projectType =
+        projectRepository.findById(projectId).map(p -> p.getType().name()).orElse("Unknown");
+
     return submissions.map(
         s ->
             AdminUserProjectSubmissionResponse.builder()
@@ -179,7 +187,7 @@ public class AdminSubmissionService {
                 .score(s.getScore())
                 .memoryUsage(s.getMemoryUsage())
                 .timeExecution(s.getTimeUsage())
-                .language("Java")
+                .projectType(projectType)
                 .submittedAt(s.getSubmittedAt())
                 .build());
   }

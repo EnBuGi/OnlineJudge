@@ -19,6 +19,7 @@ public record AdminSubmissionDetailResponse(
     Integer score,
     Integer memoryUsage,
     Integer timeExecution,
+    String projectType,
     LocalDateTime submittedAt,
     String sourceCode,
     List<TestDetailResponse> testDetails) {

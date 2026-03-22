@@ -201,6 +201,10 @@ public class SubmissionServiceTest {
     given(mockSubmission.getStatus()).willReturn(SubmissionStatus.COMPLETED);
     given(mockSubmission.getScore()).willReturn(100);
     given(mockSubmission.getSubmittedAt()).willReturn(LocalDateTime.now());
+    Project mockProject = mock(Project.class);
+    given(mockProject.getType())
+        .willReturn(org.channel.ensharponlinejudge.project.domain.ProjectType.JAVA);
+    given(projectRepository.findById(projectId)).willReturn(Optional.of(mockProject));
 
     given(
             submissionRepository.findByUserIdAndProjectIdOrderBySubmittedAtDesc(
@@ -213,6 +217,7 @@ public class SubmissionServiceTest {
     assertThat(result.getTotalElements()).isEqualTo(1);
     assertThat(result.getContent().get(0).status()).isEqualTo(SubmissionStatus.COMPLETED);
     assertThat(result.getContent().get(0).score()).isEqualTo(100);
+    assertThat(result.getContent().get(0).projectType()).isEqualTo("JAVA");
   }
 
   // 프로젝트 존재 기본 전제

@@ -1,1 +1,1 @@
-ALTER TABLE projects RENAME COLUMN test_code_url TO test_code_key;
+ALTER TABLE projects CHANGE test_code_url test_code_key VARCHAR(255);

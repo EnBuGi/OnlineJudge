@@ -76,9 +76,10 @@ public class SubmissionService {
   @Transactional(readOnly = true)
   public Page<SubmissionHistoryResponse> getSubmissionHistory(
       UUID userId, UUID projectId, Pageable pageable) {
-    projectRepository
-        .findById(projectId)
-        .orElseThrow(() -> new BusinessException(SubmissionErrorCode.PROJECT_NOT_FOUND));
+    Project project =
+        projectRepository
+            .findById(projectId)
+            .orElseThrow(() -> new BusinessException(SubmissionErrorCode.PROJECT_NOT_FOUND));
 
     userRepository
         .findById(userId)
@@ -95,7 +96,7 @@ public class SubmissionService {
                 submission.getRepoUrl(),
                 submission.getStatus(),
                 submission.getScore(),
-                "Java",
+                project.getType().name(),
                 submission.getSubmittedAt()));
   }
 
@@ -171,6 +172,12 @@ public class SubmissionService {
                 })
             .toList();
 
+    String projectType =
+        projectRepository
+            .findById(submission.getProjectId())
+            .map(p -> p.getType().name())
+            .orElse("Unknown");
+
     log.info(
         "[SubmissionService] Successfully constructed SubmissionDetailResponse for {}",
         submissionId);
@@ -181,6 +188,7 @@ public class SubmissionService {
         submission.getScore(),
         submission.getTotalTests(),
         submission.getPassedTests(),
+        projectType,
         submission.getSubmittedAt(),
         testDetails);
   }
@@ -207,7 +215,7 @@ public class SubmissionService {
                       .projectId(s.getProjectId())
                       .submittedAt(s.getSubmittedAt())
                       .problemTitle(project != null ? project.getTitle() : "Unknown")
-                      .language("Java")
+                      .projectType(project != null ? project.getType().name() : "Unknown")
                       .status(s.getStatus())
                       .score(s.getScore())
                       .memoryUsage(s.getMemoryUsage())

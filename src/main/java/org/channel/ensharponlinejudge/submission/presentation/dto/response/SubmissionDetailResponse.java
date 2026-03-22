@@ -14,6 +14,7 @@ public record SubmissionDetailResponse(
     Integer score,
     Integer totalTests,
     Integer passedTests,
+    String projectType,
     LocalDateTime submittedAt,
     List<TestDetailResponse> details) {
 

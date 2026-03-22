@@ -9,6 +9,7 @@ import org.channel.ensharponlinejudge.project.domain.ProjectTestCase;
 import org.channel.ensharponlinejudge.project.repository.ProjectTestCaseRepository;
 import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.domain.SubmissionResultDetail;
+import org.channel.ensharponlinejudge.submission.domain.SubmissionStatus;
 import org.channel.ensharponlinejudge.submission.domain.TestStatus;
 import org.channel.ensharponlinejudge.submission.infra.queue.dto.ScoringResultMessage;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
@@ -61,7 +62,20 @@ public class ScoringResultConsumer implements MessageListener {
         score = (int) Math.round((double) result.getPassedTests() / result.getTotalTests() * 100);
       }
 
-      submission.markCompleted(score, result.getTotalTests(), result.getPassedTests());
+      String overallStatus = result.getOverallStatus();
+      if ("ACCEPTED".equals(overallStatus) || overallStatus == null) {
+        submission.markCompleted(score, result.getTotalTests(), result.getPassedTests());
+      } else if ("EXECUTION_ERROR".equals(overallStatus)) {
+        submission.markSystemError();
+      } else {
+        try {
+          SubmissionStatus status = SubmissionStatus.valueOf(overallStatus);
+          submission.markFailed(status, result.getTotalTests(), result.getPassedTests());
+        } catch (IllegalArgumentException e) {
+          log.warn("Unknown overallStatus: {}, falling back to COMPLETED", overallStatus);
+          submission.markCompleted(score, result.getTotalTests(), result.getPassedTests());
+        }
+      }
 
       // Save individual test case results
       if (result.getDetails() != null) {

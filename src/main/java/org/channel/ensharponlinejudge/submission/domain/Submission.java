@@ -95,6 +95,16 @@ public class Submission {
 
   public void markSystemError() {
     this.status = SubmissionStatus.SYSTEM_ERROR;
+    this.score = 0;
+    this.totalTests = 0;
+    this.passedTests = 0;
+  }
+
+  public void markFailed(SubmissionStatus status, int totalTests, int passedTests) {
+    this.status = status;
+    this.score = 0;
+    this.totalTests = totalTests;
+    this.passedTests = passedTests;
   }
 
   public void markCancelled() {

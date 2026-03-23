@@ -56,32 +56,19 @@ public class ScoringResultConsumer implements MessageListener {
           testCases.stream()
               .collect(Collectors.toMap(ProjectTestCase::getName, tc -> tc, (a, b) -> a));
 
-      int score = result.getTotalScore();
+      // Build individual test case results and calculate total score from API server's source of truth
+      int calculatedScore = 0;
+      List<SubmissionResultDetail> details = null;
 
-      String overallStatus = result.getOverallStatus();
-      if ("ACCEPTED".equals(overallStatus) || overallStatus == null) {
-        submission.markCompleted(score, result.getTotalTests(), result.getPassedTests());
-      } else if ("EXECUTION_ERROR".equals(overallStatus)) {
-        submission.markSystemError();
-      } else {
-        try {
-          SubmissionStatus status = SubmissionStatus.valueOf(overallStatus);
-          submission.markFailed(status, score, result.getTotalTests(), result.getPassedTests());
-        } catch (IllegalArgumentException e) {
-          log.warn("Unknown overallStatus: {}, falling back to COMPLETED", overallStatus);
-          submission.markCompleted(score, result.getTotalTests(), result.getPassedTests());
-        }
-      }
-
-      // Save individual test case results
       if (result.getDetails() != null) {
-        List<SubmissionResultDetail> details =
+        details =
             result.getDetails().stream()
                 .map(
                     d -> {
                       ProjectTestCase tc = testCaseMap.get(d.getMethodName());
                       boolean hidden = tc != null && tc.isHidden();
-                      Integer testScore = tc != null ? tc.getScore() : null;
+                      Integer testCaseScore = tc != null ? tc.getScore() : 0;
+                      boolean passed = "PASSED".equals(d.getStatus());
 
                       return SubmissionResultDetail.builder()
                           .submissionId(submissionId)
@@ -90,18 +77,44 @@ public class ScoringResultConsumer implements MessageListener {
                           .durationMs((int) d.getDurationMs())
                           .message(d.getMessage())
                           .isHidden(hidden)
-                          .score(testScore != null ? testScore : 0)
+                          .score(passed ? testCaseScore : 0)
                           .build();
                     })
                 .toList();
 
+        // Sum up the scores of PASSED test cases
+        calculatedScore =
+            details.stream()
+                .filter(d -> d.getStatus() == TestStatus.PASSED)
+                .mapToInt(SubmissionResultDetail::getScore)
+                .sum();
+      }
+
+      String overallStatus = result.getOverallStatus();
+      if ("ACCEPTED".equals(overallStatus) || overallStatus == null) {
+        submission.markCompleted(calculatedScore, result.getTotalTests(), result.getPassedTests());
+      } else if ("EXECUTION_ERROR".equals(overallStatus)) {
+        submission.markSystemError();
+      } else {
+        try {
+          SubmissionStatus status = SubmissionStatus.valueOf(overallStatus);
+          submission.markFailed(
+              status, calculatedScore, result.getTotalTests(), result.getPassedTests());
+        } catch (IllegalArgumentException e) {
+          log.warn("Unknown overallStatus: {}, falling back to COMPLETED", overallStatus);
+          submission.markCompleted(
+              calculatedScore, result.getTotalTests(), result.getPassedTests());
+        }
+      }
+
+      if (details != null) {
         submissionResultDetailRepository.saveAll(details);
       }
 
       log.info(
           "Scoring result processed: submissionId={}, score={}, passed={}/{}",
           submissionId,
-          score,
+          calculatedScore,
           result.getPassedTests(),
           result.getTotalTests());
 

@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.channel.ensharponlinejudge.common.util.EncryptionUtils;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 public class TokenStore {
+
+  private final EncryptionUtils encryptionUtils;
 
   @Getter
   private static final class TokenInfo {
@@ -53,6 +56,9 @@ public class TokenStore {
 
   // Key: OAuthState, Value: OAuthStateInfo
   private final Map<String, OAuthStateInfo> oAuthStateStore = new ConcurrentHashMap<>();
+
+  // Key: GithubId, Value: TokenInfo (Temporary Github Access Token for signup)
+  private final Map<String, TokenInfo> githubAccessTokenStore = new ConcurrentHashMap<>();
 
   // Refresh Token 저장
   public void saveRefreshToken(String email, String refreshToken, long durationInMillis) {
@@ -103,6 +109,21 @@ public class TokenStore {
     return info != null && !info.isExpired();
   }
 
+  // Github Access Token 임시 저장
+  public void saveGithubAccessToken(String githubId, String token, long durationInMillis) {
+    String encryptedToken = encryptionUtils.encrypt(token);
+    githubAccessTokenStore.put(githubId, new TokenInfo(encryptedToken, durationInMillis));
+  }
+
+  // Github Access Token 조회 및 삭제 (일회용)
+  public Optional<String> getGithubAccessToken(String githubId) {
+    TokenInfo info = githubAccessTokenStore.remove(githubId);
+    if (info != null && !info.isExpired()) {
+      return Optional.ofNullable(encryptionUtils.decrypt(info.getValue()));
+    }
+    return Optional.empty();
+  }
+
   // 1시간마다 만료된 토큰 정리
   @Scheduled(fixedRate = 3600000)
   public void cleanUp() {
@@ -137,6 +158,15 @@ public class TokenStore {
       if (stateIterator.next().getValue().isExpired()) {
         stateIterator.remove();
         removedStateCount++;
+      }
+    }
+
+    // Github Access Token 정리
+    Iterator<Map.Entry<String, TokenInfo>> githubTokenIterator =
+        githubAccessTokenStore.entrySet().iterator();
+    while (githubTokenIterator.hasNext()) {
+      if (githubTokenIterator.next().getValue().isExpired()) {
+        githubTokenIterator.remove();
       }
     }
 

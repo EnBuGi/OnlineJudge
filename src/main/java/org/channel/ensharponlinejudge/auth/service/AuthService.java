@@ -168,6 +168,7 @@ public class AuthService {
         + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
         + "&state="
         + state
-        + "&scope=user:email,repo";
+        + "&scope="
+        + URLEncoder.encode("user:email repo", StandardCharsets.UTF_8);
   }
 }

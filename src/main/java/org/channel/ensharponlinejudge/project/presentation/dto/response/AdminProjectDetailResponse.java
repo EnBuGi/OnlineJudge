@@ -22,4 +22,5 @@ public record AdminProjectDetailResponse(
     String skeletonUrl,
     String testCodeKey,
     String testCodeUrl,
-    ScorePolicyDto scorePolicy) {}
+    ScorePolicyDto scorePolicy,
+    boolean canSubmit) {}

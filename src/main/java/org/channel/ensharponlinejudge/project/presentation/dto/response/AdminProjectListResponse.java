@@ -16,4 +16,5 @@ public record AdminProjectListResponse(
     ProjectType type,
     int generation,
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime startDate,
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime dueDate) {}
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime dueDate,
+    boolean canSubmit) {}

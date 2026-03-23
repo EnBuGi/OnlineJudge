@@ -19,4 +19,5 @@ public record MenteeProjectDetailResponse(
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime startDate,
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime dueDate,
     String skeletonUrl,
-    ScorePolicyDto scorePolicy) {}
+    ScorePolicyDto scorePolicy,
+    boolean canSubmit) {}

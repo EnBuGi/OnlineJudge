@@ -57,6 +57,9 @@ public class Project {
   @Column(name = "memory_limit")
   private Integer memoryLimit;
 
+  @Column(name = "can_submit", nullable = false)
+  private boolean canSubmit = true;
+
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
@@ -76,7 +79,8 @@ public class Project {
       String skeletonUrl,
       String testCodeKey,
       Integer timeLimit,
-      Integer memoryLimit) {
+      Integer memoryLimit,
+      Boolean canSubmit) {
     this.generation = generation;
     this.type = type;
     this.title = title;
@@ -87,6 +91,7 @@ public class Project {
     this.testCodeKey = testCodeKey;
     this.timeLimit = timeLimit;
     this.memoryLimit = memoryLimit;
+    this.canSubmit = canSubmit != null ? canSubmit : true;
   }
 
   public static Project initialize(
@@ -99,7 +104,8 @@ public class Project {
       String skeletonUrl,
       String testCodeKey,
       Integer timeLimit,
-      Integer memoryLimit) {
+      Integer memoryLimit,
+      boolean canSubmit) {
     return Project.builder()
         .generation(generation)
         .type(type)
@@ -111,6 +117,7 @@ public class Project {
         .testCodeKey(testCodeKey)
         .timeLimit(timeLimit)
         .memoryLimit(memoryLimit)
+        .canSubmit(canSubmit)
         .build();
   }
 
@@ -123,7 +130,8 @@ public class Project {
       LocalDateTime dueDate,
       String skeletonUrl,
       Integer timeLimit,
-      Integer memoryLimit) {
+      Integer memoryLimit,
+      boolean canSubmit) {
     this.generation = generation;
     this.type = type;
     this.title = title;
@@ -133,6 +141,7 @@ public class Project {
     this.skeletonUrl = skeletonUrl;
     this.timeLimit = timeLimit;
     this.memoryLimit = memoryLimit;
+    this.canSubmit = canSubmit;
   }
 
   /** OCI 오브젝트 스토리지에 업로드된 테스트 코드의 Key값을 저장합니다. */

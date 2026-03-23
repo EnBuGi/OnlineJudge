@@ -56,7 +56,8 @@ public class ScoringResultConsumer implements MessageListener {
           testCases.stream()
               .collect(Collectors.toMap(ProjectTestCase::getName, tc -> tc, (a, b) -> a));
 
-      // Build individual test case results and calculate total score from API server's source of truth
+      // Build individual test case results and calculate total score from API server's source of
+      // truth
       int calculatedScore = 0;
       List<SubmissionResultDetail> details = null;
 
@@ -66,6 +67,12 @@ public class ScoringResultConsumer implements MessageListener {
                 .map(
                     d -> {
                       ProjectTestCase tc = testCaseMap.get(d.getMethodName());
+                      if (tc == null) {
+                        log.warn(
+                            "Test case not found for method: {}. Available test cases: {}",
+                            d.getMethodName(),
+                            testCaseMap.keySet());
+                      }
                       boolean hidden = tc != null && tc.isHidden();
                       Integer testCaseScore = tc != null ? tc.getScore() : 0;
                       boolean passed = "PASSED".equals(d.getStatus());

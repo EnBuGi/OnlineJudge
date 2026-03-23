@@ -170,9 +170,8 @@ public class SubmissionServiceTest {
     String repoUrl = "http://gitbub,com/vvineey/example";
     UUID submisssionId = UUID.randomUUID();
 
-    // 유저, 프로젝트 id
-    given(projectRepository.findById(projectId)).willReturn(Optional.of(mock(Project.class)));
-    given(userRepository.findById(userid)).willReturn(Optional.of(mock(User.class)));
+    // 유저, 프로젝트 존재
+    givenProjectAndUserExist(projectId, userid);
 
     Submission mockSubmission = mock(Submission.class);
 
@@ -222,7 +221,9 @@ public class SubmissionServiceTest {
 
   // 프로젝트 존재 기본 전제
   private void givenProjectExists(UUID projectId) {
-    given(projectRepository.findById(projectId)).willReturn(Optional.of(mock(Project.class)));
+    Project mockProject = mock(Project.class);
+    lenient().when(mockProject.getTestCodeKey()).thenReturn("test-code-key");
+    given(projectRepository.findById(projectId)).willReturn(Optional.of(mockProject));
   }
 
   // 유저 존재 기본 전제

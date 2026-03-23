@@ -18,17 +18,26 @@ public record SubmissionJudgeRequest(
     String githubAccessToken) {
   @Override
   public String toString() {
-    return "SubmissionJudgeRequest[" +
-        "submissionId=" + submissionId +
-        ", userId=" + userId +
-        ", projectId=" + projectId +
-        ", repoUrl=" + repoUrl +
-        ", testCodeUrl=" + testCodeUrl +
-        ", timeLimit=" + timeLimit +
-        ", memoryLimit=" + memoryLimit +
-        ", projectType=" + projectType +
-        ", testCases=" + testCases +
-        ", githubAccessToken=[PROTECTED]" +
-        "]";
+    return "SubmissionJudgeRequest["
+        + "submissionId="
+        + submissionId
+        + ", userId="
+        + userId
+        + ", projectId="
+        + projectId
+        + ", repoUrl="
+        + repoUrl
+        + ", testCodeUrl="
+        + testCodeUrl
+        + ", timeLimit="
+        + timeLimit
+        + ", memoryLimit="
+        + memoryLimit
+        + ", projectType="
+        + projectType
+        + ", testCases="
+        + testCases
+        + ", githubAccessToken=[PROTECTED]"
+        + "]";
   }
 }

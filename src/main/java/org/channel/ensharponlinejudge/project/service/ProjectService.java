@@ -394,7 +394,7 @@ public class ProjectService {
                                   });
 
                       if (isTest) {
-                        methodNames.add(method.getNameAsString());
+                        methodNames.add(method.getNameAsString() + "()");
                       }
                     });
           } catch (Exception e) {

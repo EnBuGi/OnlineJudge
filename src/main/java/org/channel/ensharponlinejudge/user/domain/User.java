@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import jakarta.persistence.*;
 
+import org.channel.ensharponlinejudge.user.infra.GithubTokenConverter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -39,6 +40,10 @@ public class User {
   @Column(name = "profile_image_url", nullable = false, length = 500)
   private String profileImageUrl;
 
+  @Convert(converter = GithubTokenConverter.class)
+  @Column(name = "github_access_token", length = 255)
+  private String githubAccessToken;
+
   @Column(nullable = false)
   private boolean isDeleted = false;
 
@@ -50,6 +55,7 @@ public class User {
       int generation,
       Role role,
       String profileImageUrl,
+      String githubAccessToken,
       boolean isDeleted) {
     this.id = id;
     this.githubId = githubId;
@@ -57,6 +63,7 @@ public class User {
     this.generation = generation;
     this.role = role;
     this.profileImageUrl = profileImageUrl;
+    this.githubAccessToken = githubAccessToken;
     this.isDeleted = isDeleted;
   }
 
@@ -74,5 +81,9 @@ public class User {
 
   public void updateRole(Role role) {
     this.role = role;
+  }
+
+  public void updateGithubAccessToken(String githubAccessToken) {
+    this.githubAccessToken = githubAccessToken;
   }
 }

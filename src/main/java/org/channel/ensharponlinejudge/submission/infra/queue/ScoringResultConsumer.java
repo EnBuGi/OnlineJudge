@@ -56,11 +56,7 @@ public class ScoringResultConsumer implements MessageListener {
           testCases.stream()
               .collect(Collectors.toMap(ProjectTestCase::getName, tc -> tc, (a, b) -> a));
 
-      //  score: (passedTests / totalTests) * 100
-      int score = 0;
-      if (result.getTotalTests() > 0) {
-        score = (int) Math.round((double) result.getPassedTests() / result.getTotalTests() * 100);
-      }
+      int score = result.getTotalScore();
 
       String overallStatus = result.getOverallStatus();
       if ("ACCEPTED".equals(overallStatus) || overallStatus == null) {
@@ -70,7 +66,7 @@ public class ScoringResultConsumer implements MessageListener {
       } else {
         try {
           SubmissionStatus status = SubmissionStatus.valueOf(overallStatus);
-          submission.markFailed(status, result.getTotalTests(), result.getPassedTests());
+          submission.markFailed(status, score, result.getTotalTests(), result.getPassedTests());
         } catch (IllegalArgumentException e) {
           log.warn("Unknown overallStatus: {}, falling back to COMPLETED", overallStatus);
           submission.markCompleted(score, result.getTotalTests(), result.getPassedTests());

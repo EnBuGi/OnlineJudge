@@ -51,6 +51,7 @@ public class AuthService {
     Optional<User> userOpt = memberRepository.findByGithubId(githubId);
     if (userOpt.isPresent()) {
       User user = userOpt.get();
+      user.updateGithubAccessToken(accessToken); // Update token on every login
       Authentication authentication =
           new UsernamePasswordAuthenticationToken(
               user.getId().toString(),
@@ -58,6 +59,7 @@ public class AuthService {
               List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));
       return issueTokens(authentication);
     } else {
+      tokenStore.saveGithubAccessToken(githubId, accessToken, 300_000); // Temporary save for signup
       return new GithubLoginInfoResponse("회원가입이 필요합니다.", githubId, profileImageUrl);
     }
   }
@@ -78,6 +80,8 @@ public class AuthService {
       throw new BusinessException(AuthErrorCode.GENERATION_MISMATCH);
     }
 
+    String githubAccessToken = tokenStore.getGithubAccessToken(request.getGithubId()).orElse(null);
+
     User user =
         User.builder()
             .githubId(request.getGithubId())
@@ -85,6 +89,7 @@ public class AuthService {
             .generation(request.getGeneration())
             .role(role)
             .profileImageUrl(request.getProfileImageUrl())
+            .githubAccessToken(githubAccessToken)
             .isDeleted(false)
             .build();
 
@@ -163,6 +168,6 @@ public class AuthService {
         + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
         + "&state="
         + state
-        + "&scope=user:email";
+        + "&scope=user:email,repo";
   }
 }

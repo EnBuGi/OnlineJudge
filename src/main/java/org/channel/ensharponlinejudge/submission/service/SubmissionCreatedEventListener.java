@@ -4,12 +4,16 @@ import org.channel.ensharponlinejudge.exception.BusinessException;
 import org.channel.ensharponlinejudge.exception.enums.SubmissionErrorCode;
 import org.channel.ensharponlinejudge.project.domain.Project;
 import org.channel.ensharponlinejudge.project.infra.storage.ObjectStorageService;
+import org.channel.ensharponlinejudge.project.presentation.dto.request.TestCaseDto;
 import org.channel.ensharponlinejudge.project.repository.ProjectRepository;
+import org.channel.ensharponlinejudge.project.repository.ProjectTestCaseRepository;
 import org.channel.ensharponlinejudge.submission.domain.Submission;
 import org.channel.ensharponlinejudge.submission.infra.queue.SubmissionQueuePublisher;
 import org.channel.ensharponlinejudge.submission.infra.queue.dto.SubmissionCreatedEvent;
 import org.channel.ensharponlinejudge.submission.infra.queue.dto.SubmissionJudgeRequest;
 import org.channel.ensharponlinejudge.submission.repository.SubmissionRepository;
+import org.channel.ensharponlinejudge.user.domain.User;
+import org.channel.ensharponlinejudge.user.repository.UserRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -24,8 +28,10 @@ public class SubmissionCreatedEventListener {
 
   private final SubmissionRepository submissionRepository;
   private final ProjectRepository projectRepository;
+  private final ProjectTestCaseRepository projectTestCaseRepository;
   private final SubmissionQueuePublisher submissionQueuePublisher;
   private final ObjectStorageService objectStorageService;
+  private final UserRepository userRepository;
 
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   public void onSubmissionQueued(SubmissionCreatedEvent submissionCreatedEvent) {
@@ -48,6 +54,20 @@ public class SubmissionCreatedEventListener {
     String freshTestCodeUrl = objectStorageService.generateGetUrl(testCodeKey);
     log.info("[SubmissionCreatedEventListener] Generated fresh testCodeUrl: {}", freshTestCodeUrl);
 
+    // Fetch and map test cases
+    var testCases =
+        projectTestCaseRepository.findByProjectId(submission.getProjectId()).stream()
+            .map(
+                tc ->
+                    new TestCaseDto(
+                        tc.getId().toString(), tc.getName(), tc.getScore(), tc.isHidden()))
+            .toList();
+
+    User user =
+        userRepository
+            .findById(submission.getUserId())
+            .orElseThrow(() -> new BusinessException(SubmissionErrorCode.SUBMISSION_NOT_FOUND));
+
     SubmissionJudgeRequest submissionJudgeRequest =
         new SubmissionJudgeRequest(
             submission.getId(),
@@ -57,7 +77,9 @@ public class SubmissionCreatedEventListener {
             freshTestCodeUrl,
             project.getTimeLimit(),
             project.getMemoryLimit(),
-            project.getType().name());
+            project.getType().name(),
+            testCases,
+            user.getGithubAccessToken());
 
     try {
       log.info(

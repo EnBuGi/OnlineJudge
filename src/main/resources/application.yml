@@ -36,3 +36,6 @@ oci:
     namespace: ${OCI_NAMESPACE}
     test-code-bucket-name: ${OCI_TEST_CODE_BUCKET_NAME}
     par-expiration-hours: 1
+
+encryption:
+  key: ${ENCRYPTION_KEY:default-encryption-key-for-dev-only}

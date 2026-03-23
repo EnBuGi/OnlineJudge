@@ -23,4 +23,5 @@ public record ProjectCreateRequest(
     String description,
     String skeletonUrl,
     String testCodeKey,
-    @Valid @NotNull ScorePolicyDto scorePolicy) {}
+    @Valid @NotNull ScorePolicyDto scorePolicy,
+    boolean canSubmit) {}

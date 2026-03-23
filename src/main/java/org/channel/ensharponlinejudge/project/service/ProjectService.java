@@ -76,7 +76,8 @@ public class ProjectService {
             request.skeletonUrl(),
             request.testCodeKey(),
             request.scorePolicy().timeLimit(),
-            request.scorePolicy().memoryLimit());
+            request.scorePolicy().memoryLimit(),
+            request.canSubmit());
 
     Project savedProject = projectRepository.save(project);
 
@@ -125,7 +126,8 @@ public class ProjectService {
         request.dueDate(),
         request.skeletonUrl(),
         request.scorePolicy().timeLimit(),
-        request.scorePolicy().memoryLimit());
+        request.scorePolicy().memoryLimit(),
+        request.canSubmit());
 
     // 테스트 코드 키가 있으면 처리
     handleTestCodeKey(project, request.testCodeKey());
@@ -203,6 +205,7 @@ public class ProjectService {
                     .generation(project.getGeneration())
                     .startDate(project.getStartDate())
                     .dueDate(project.getDueDate())
+                    .canSubmit(project.isCanSubmit())
                     .build())
         .collect(Collectors.toList());
   }
@@ -266,6 +269,7 @@ public class ProjectService {
         .testCodeKey(testCodeKey)
         .testCodeUrl(testCodeUrl)
         .scorePolicy(scorePolicy)
+        .canSubmit(project.isCanSubmit())
         .build();
   }
 
@@ -286,6 +290,7 @@ public class ProjectService {
                     .type(project.getType())
                     .startDate(project.getStartDate())
                     .dueDate(project.getDueDate())
+                    .canSubmit(project.isCanSubmit())
                     .build())
         .collect(Collectors.toList());
   }
@@ -337,6 +342,7 @@ public class ProjectService {
         .skeletonUrl(project.getSkeletonUrl())
         // Mentee response explicitly excludes testCodeUrl
         .scorePolicy(scorePolicy)
+        .canSubmit(project.isCanSubmit())
         .build();
   }
 

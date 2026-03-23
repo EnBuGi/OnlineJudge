@@ -12,6 +12,7 @@ public class ScoringResultMessage {
   private String overallStatus;
   private int totalTests;
   private int passedTests;
+  private int totalScore;
   private List<TestDetailMessage> details;
 
   @Getter

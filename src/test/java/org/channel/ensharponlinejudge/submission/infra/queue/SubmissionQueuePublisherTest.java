@@ -3,6 +3,7 @@ package org.channel.ensharponlinejudge.submission.infra.queue;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
+import java.util.Collections;
 import java.util.UUID;
 
 import org.channel.ensharponlinejudge.exception.BusinessException;
@@ -37,7 +38,16 @@ public class SubmissionQueuePublisherTest {
 
     SubmissionJudgeRequest submissionJudgeRequest =
         new SubmissionJudgeRequest(
-            submissionId, userId, projectId, repoUrl, testCodeGetUrl, 1000, 512, "JAVA");
+            submissionId,
+            userId,
+            projectId,
+            repoUrl,
+            testCodeGetUrl,
+            1000,
+            512,
+            "JAVA",
+            Collections.emptyList(),
+            null);
 
     String json = "{\"fake\":\"json\"}";
     when(objectMapper.writeValueAsString(submissionJudgeRequest)).thenReturn(json);
@@ -66,7 +76,16 @@ public class SubmissionQueuePublisherTest {
 
     SubmissionJudgeRequest submissionJudgeRequest =
         new SubmissionJudgeRequest(
-            submissionId, userId, projectId, repoUrl, testCodeGetUrl, 1000, 512, "JAVA");
+            submissionId,
+            userId,
+            projectId,
+            repoUrl,
+            testCodeGetUrl,
+            1000,
+            512,
+            "JAVA",
+            Collections.emptyList(),
+            null);
 
     when(objectMapper.writeValueAsString(submissionJudgeRequest))
         .thenThrow(new JsonProcessingException("boom") {});

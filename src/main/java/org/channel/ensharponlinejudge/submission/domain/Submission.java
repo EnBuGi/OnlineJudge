@@ -100,9 +100,9 @@ public class Submission {
     this.passedTests = 0;
   }
 
-  public void markFailed(SubmissionStatus status, int totalTests, int passedTests) {
+  public void markFailed(SubmissionStatus status, int score, int totalTests, int passedTests) {
     this.status = status;
-    this.score = 0;
+    this.score = score;
     this.totalTests = totalTests;
     this.passedTests = passedTests;
   }

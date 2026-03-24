@@ -218,8 +218,6 @@ public class SubmissionService {
                       .projectType(project != null ? project.getType().name() : "Unknown")
                       .status(s.getStatus())
                       .score(s.getScore())
-                      .memoryUsage(s.getMemoryUsage())
-                      .timeUsage(s.getTimeUsage())
                       .build();
                 })
             .collect(Collectors.toList());

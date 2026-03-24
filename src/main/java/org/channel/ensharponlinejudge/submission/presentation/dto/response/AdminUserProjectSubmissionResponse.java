@@ -14,8 +14,6 @@ public class AdminUserProjectSubmissionResponse {
   private UUID submissionId;
   private SubmissionStatus status;
   private Integer score;
-  private Integer memoryUsage;
-  private Integer timeExecution;
   private String projectType;
   private LocalDateTime submittedAt;
 }

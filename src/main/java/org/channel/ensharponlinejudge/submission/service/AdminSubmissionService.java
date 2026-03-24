@@ -113,8 +113,6 @@ public class AdminSubmissionService {
                       .projectType(project != null ? project.getType().name() : "Unknown")
                       .status(s.getStatus())
                       .score(s.getScore())
-                      .memoryUsage(s.getMemoryUsage())
-                      .timeUsage(s.getTimeUsage())
                       .build();
                 })
             .collect(Collectors.toList());
@@ -157,8 +155,6 @@ public class AdminSubmissionService {
         .repoUrl(submission.getRepoUrl())
         .status(submission.getStatus())
         .score(submission.getScore())
-        .memoryUsage(submission.getMemoryUsage())
-        .timeExecution(submission.getTimeUsage())
         .projectType(
             projectRepository
                 .findById(submission.getProjectId())
@@ -185,8 +181,6 @@ public class AdminSubmissionService {
                 .submissionId(s.getId())
                 .status(s.getStatus())
                 .score(s.getScore())
-                .memoryUsage(s.getMemoryUsage())
-                .timeExecution(s.getTimeUsage())
                 .projectType(projectType)
                 .submittedAt(s.getSubmittedAt())
                 .build());

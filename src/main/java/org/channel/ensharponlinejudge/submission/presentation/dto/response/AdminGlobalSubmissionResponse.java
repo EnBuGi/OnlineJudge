@@ -17,6 +17,4 @@ public record AdminGlobalSubmissionResponse(
     String problemTitle,
     String projectType,
     SubmissionStatus status,
-    Integer score,
-    Integer memoryUsage,
-    Integer timeUsage) {}
+    Integer score) {}

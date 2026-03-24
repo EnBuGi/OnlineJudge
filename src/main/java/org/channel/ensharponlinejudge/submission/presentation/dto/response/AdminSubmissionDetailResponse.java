@@ -17,8 +17,6 @@ public record AdminSubmissionDetailResponse(
     String repoUrl,
     SubmissionStatus status,
     Integer score,
-    Integer memoryUsage,
-    Integer timeExecution,
     String projectType,
     LocalDateTime submittedAt,
     String sourceCode,

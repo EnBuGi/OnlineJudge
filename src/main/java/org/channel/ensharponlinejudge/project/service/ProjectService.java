@@ -283,15 +283,19 @@ public class ProjectService {
     return projectRepository.findAll().stream()
         .filter(project -> project.getGeneration() >= user.getGeneration())
         .map(
-            project ->
-                MenteeProjectListResponse.builder()
-                    .id(project.getId())
-                    .title(project.getTitle())
-                    .type(project.getType())
-                    .startDate(project.getStartDate())
-                    .dueDate(project.getDueDate())
-                    .canSubmit(project.isCanSubmit())
-                    .build())
+            project -> {
+              Integer maxScore =
+                  submissionRepository.findMaxScoreByUserIdAndProjectId(userId, project.getId());
+              return MenteeProjectListResponse.builder()
+                  .id(project.getId())
+                  .title(project.getTitle())
+                  .type(project.getType())
+                  .startDate(project.getStartDate())
+                  .dueDate(project.getDueDate())
+                  .canSubmit(project.isCanSubmit())
+                  .score(maxScore)
+                  .build();
+            })
         .collect(Collectors.toList());
   }
 

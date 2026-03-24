@@ -33,5 +33,11 @@ public interface SubmissionRepository extends JpaRepository<Submission, UUID> {
 
   Page<Submission> findAllByOrderBySubmittedAtDesc(Pageable pageable);
 
+  @org.springframework.data.jpa.repository.Query(
+      "SELECT MAX(s.score) FROM Submission s WHERE s.userId = :userId AND s.projectId = :projectId")
+  Integer findMaxScoreByUserIdAndProjectId(
+      @org.springframework.data.repository.query.Param("userId") UUID userId,
+      @org.springframework.data.repository.query.Param("projectId") UUID projectId);
+
   List<Submission> findAllByOrderBySubmittedAtDesc();
 }

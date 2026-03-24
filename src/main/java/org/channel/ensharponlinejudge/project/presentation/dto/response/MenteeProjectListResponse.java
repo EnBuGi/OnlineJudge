@@ -16,4 +16,5 @@ public record MenteeProjectListResponse(
     ProjectType type,
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime startDate,
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime dueDate,
-    boolean canSubmit) {}
+    boolean canSubmit,
+    Integer score) {}

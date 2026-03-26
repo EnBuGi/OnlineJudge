@@ -1,5 +1,6 @@
 package org.channel.ensharponlinejudge.user.service;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -25,6 +26,7 @@ public class AdminUserService {
             ? userRepository.findAll()
             : userRepository.findByGeneration(generation))
         .stream()
+            .sorted(Comparator.comparingInt(User::getGeneration))
             .map(
                 user ->
                     AdminUserResponse.builder()
